@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}{{ style.name }} | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Style detail</p>
+    <h1>{{ style.name }}</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container product-layout">
+    <div class="product-gallery">
+      {% for image in style.images %}
+        <img src="{{ image }}" alt="{{ style.name }}" />
+      {% endfor %}
+    </div>
+    <div class="product-summary">
+      <span class="badge large-badge">{{ style.category }}</span>
+      <h2>{{ style.name }}</h2>
+      <div class="price-row">
+        <strong>₦{{ "{:,.0f}".format(style.price) }}</strong>
+        <span>{{ style.rating }} ★ from {{ style.reviews }} reviews</span>
+      </div>
+      <p>{{ style.description }}</p>
+      <ul class="details-list">
+        <li><strong>Colors:</strong> {{ style.colors_list | join(', ') }}</li>
+        <li><strong>Fabric options:</strong> {{ style.fabric_list | join(', ') }}</li>
+        <li><strong>Production time:</strong> {{ style.lead_time }}</li>
+        <li><strong>Availability:</strong> {{ style.availability }}</li>
+      </ul>
+      <div class="cta-row product-actions">
+        <a class="btn btn-primary" href="{{ url_for('booking_page', style=style.slug) }}">Book this style</a>
+        <a class="btn btn-secondary" href="{{ url_for('booking_page', style=style.slug) }}">Request customization</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt-bg">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Related styles</p>
+      <h2>Continue exploring</h2>
+    </div>
+    <div class="card-grid">
+      {% for related in related_styles %}
+        <article class="style-card">
+          <img src="{{ related.images[0] }}" alt="{{ related.name }}">
+          <div class="style-body">
+            <h3>{{ related.name }}</h3>
+            <div class="meta-row">
+              <span>₦{{ "{:,.0f}".format(related.price) }}</span>
+              <span>{{ related.category }}</span>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

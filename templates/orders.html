@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Orders | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Order tracking</p>
+    <h1>Track your tailoring journey</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Item</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Delivery</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td>{{ order.order_number }}</td>
+              <td>{{ order.customer_name }}</td>
+              <td>{{ order.item_name }}</td>
+              <td>₦{{ "{:,.0f}".format(order.total_amount) }}</td>
+              <td>{{ order.status }}</td>
+              <td>{{ order.delivery_status }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

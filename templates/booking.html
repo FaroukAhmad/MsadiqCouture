@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Book a Tailor | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Booking</p>
+    <h1>Schedule your tailoring appointment</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container booking-layout">
+    <form class="contact-form booking-form" method="post" action="{{ url_for('booking_page') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>
+        Full name
+        <input type="text" name="customer_name" placeholder="Your full name" required />
+      </label>
+      <label>
+        Service
+        <select name="service_name" required>
+          {% for service in services %}
+            <option value="{{ service.name }}">{{ service.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Preferred style
+        <select name="style_name">
+          {% for style in styles %}
+            <option value="{{ style.name }}" {% if selected_style == style.slug or selected_style == style.name %}selected{% endif %}>{{ style.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Preferred date
+        <input type="date" name="preferred_date" required />
+      </label>
+      <label>
+        Preferred time
+        <input type="time" name="preferred_time" required />
+      </label>
+      <button class="btn btn-primary" type="submit">Submit booking</button>
+    </form>
+
+    <div class="feature-box" style="padding: 1.75rem;">
+      <h3>Booking summary</h3>
+      <ul class="checks">
+        <li>Measurement review before production</li>
+        <li>Secure confirmation and payment workflow</li>
+        <li>Production milestone updates</li>
+        <li>Pickup or delivery scheduling</li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

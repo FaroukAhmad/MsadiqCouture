@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Create Account | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="section auth-section">
+  <div class="container auth-form-shell">
+    <div class="auth-intro">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Msadiq Couture logo" />
+      <h1>Create your account</h1>
+      <p>Save your measurements, book appointments, and follow every tailoring milestone.</p>
+    </div>
+    <form class="auth-form" method="post" action="{{ url_for('signup') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="next" value="{{ next_url }}" />
+      <label>Full name<input type="text" name="full_name" placeholder="Your full name" autocomplete="name" required /></label>
+      <label>Email<input type="email" name="email" placeholder="you@example.com" autocomplete="email" required /></label>
+      <label>Phone<input type="tel" name="phone" placeholder="0800 000 0000" autocomplete="tel" required /></label>
+      <label>Password<input type="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required /></label>
+      <label>Confirm password<input type="password" name="confirm_password" placeholder="Repeat your password" autocomplete="new-password" minlength="8" required /></label>
+      <button type="submit" class="btn btn-primary full-width">Create account</button>
+      <p class="auth-note">Already have an account? <a class="text-link" href="{{ url_for('login', next=next_url) if next_url else url_for('login') }}">Log in</a></p>
+    </form>
+  </div>
+</section>
+{% endblock %}

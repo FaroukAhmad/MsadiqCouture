@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Msadiq Couture | Luxury Tailoring Marketplace{% endblock %}
+{% block content %}
+<section class="hero-section">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Crafted for You. Designed to Impress.</p>
+      <h1>Luxury tailoring for modern African fashion.</h1>
+      <p class="lead">From bespoke bridalwear to executive corporate tailoring, we create refined pieces that celebrate craftsmanship, identity, and confidence.</p>
+      <div class="cta-row">
+        <a href="{{ url_for('styles_page') }}" class="btn btn-primary">Explore Styles</a>
+        <a href="{{ url_for('booking_page') }}" class="btn btn-secondary">Book a Tailor</a>
+      </div>
+      <div class="hero-points">
+        <span>Premium Fabrics</span>
+        <span>Made-to-Measure</span>
+        <span>Fast Delivery</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="feature-card large">
+        <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80" alt="Luxury fashion styling" />
+      </div>
+      <div class="mini-card">
+        <strong>4.9/5</strong>
+        <span>Client satisfaction</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="brand-strip" aria-label="Msadiq Couture commitments">
+  <div class="container brand-strip-grid">
+    <div><strong>01</strong><span>Consultation-led design</span></div>
+    <div><strong>02</strong><span>Measured for your fit</span></div>
+    <div><strong>03</strong><span>Crafted in Lagos</span></div>
+    <div><strong>04</strong><span>Tracked from order to delivery</span></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Hausa Heritage Collection</p>
+      <h2>Babbar Riga and Jampa, tailored with a premium finish</h2>
+    </div>
+    <div class="card-grid">
+      {% for style in styles[:4] %}
+        <article class="style-card">
+          <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+          <div class="style-body">
+            <span class="badge">{{ style.category }}</span>
+            <h3>{{ style.name }}</h3>
+            <div class="meta-row">
+              <span>₦{{ "{:,.0f}".format(style.price) }}</span>
+              <span>{{ style.rating }} ★</span>
+            </div>
+            <a href="{{ url_for('style_detail', slug=style.slug) }}" class="text-link">View details</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt-bg business-section">
+  <div class="container two-column">
+    <div>
+      <p class="eyebrow">Why choose us</p>
+      <h2>Modern elegance, true craftsmanship.</h2>
+      <ul class="checks">
+        <li>Consultation-led bespoke tailoring approach</li>
+        <li>Measured fit for weddings, bridal, corporate, and traditional wear</li>
+        <li>Secure booking, payment, and order tracking workflows</li>
+        <li>Expert finishing and customer support throughout production</li>
+      </ul>
+    </div>
+    <div class="stats-panel">
+      <div class="stat-box">
+        <strong>{{ stats.customers }}</strong>
+        <span>Happy customers</span>
+      </div>
+      <div class="stat-box">
+        <strong>{{ stats.completed_orders }}</strong>
+        <span>Completed orders</span>
+      </div>
+      <div class="stat-box">
+        <strong>{{ stats.revenue }}</strong>
+        <span>Revenue tracked</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section services-section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Tailoring services</p>
+      <h2>Designed around your wardrobe and occasion</h2>
+    </div>
+    <div class="service-grid">
+      {% for service in services %}
+        <article class="service-card">
+          <img src="{{ service.image }}" alt="{{ service.name }}" />
+          <div class="service-body">
+            <h3>{{ service.name }}</h3>
+            <p>{{ service.description }}</p>
+            <div class="service-meta">
+              <span>From ₦{{ "{:,.0f}".format(service.price) }}</span>
+              <span>{{ service.duration }}</span>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt-bg">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">How it works</p>
+      <h2>Your tailoring journey in 4 simple steps</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <span class="step-number">01</span>
+        <h3>Browse</h3>
+        <p>Discover premium styles and services that match your event, mood, and wardrobe needs.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">02</span>
+        <h3>Customize</h3>
+        <p>Choose fabrics, colors, measurements, and service details for a personalized fit.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">03</span>
+        <h3>Confirm</h3>
+        <p>Review pricing, dates, and bookings before proceeding to secure payment and approval.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">04</span>
+        <h3>Receive</h3>
+        <p>Track production progress and collect your finished piece with confidence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section testimonials">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Client love</p>
+      <h2>Trusted by customers who value quality</h2>
+    </div>
+    <div class="quote-grid">
+      <blockquote>
+        “The fit was exceptional and the finish looked premium. I received compliments on my wedding day.”
+        <footer>— Ada Nwosu</footer>
+      </blockquote>
+      <blockquote>
+        “The process was smooth from consultation to delivery. Very professional and detail-oriented.”
+        <footer>— Tobi Martins</footer>
+      </blockquote>
+      <blockquote>
+        “I booked a corporate suit and it felt like a luxury concierge service. Highly recommended.”
+        <footer>— Chinedu Okafor</footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+{% endblock %}

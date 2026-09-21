@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Profile | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Account settings</p>
+    <h1>Keep your client profile current</h1>
+  </div>
+</section>
+<section class="section">
+  <div class="container auth-card">
+    <div class="panel">
+      {% if profile.avatar %}<img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />{% endif %}
+      <h3>Personal details</h3>
+      <form class="contact-form" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <label>Full name<input name="full_name" value="{{ user.full_name }}" required /></label>
+        <label>Email<input type="email" name="email" value="{{ user.email }}" required /></label>
+        <label>Phone<input name="phone" value="{{ user.phone }}" required /></label>
+        <label>Profile photo<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" /></label>
+        <label>Address<input name="address" value="{{ profile.address or '' }}" /></label>
+        <label>City<input name="city" value="{{ profile.city or '' }}" /></label>
+        <label>Tailoring notes<textarea name="notes" rows="4">{{ profile.notes or '' }}</textarea></label>
+        <button class="btn btn-primary" type="submit">Save profile</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Admin Analytics | Msadiq Couture{% endblock %}
+{% block admin_content %}
+<section class="admin-page-heading"><p class="eyebrow">Business intelligence</p><h1>Analytics overview</h1><p>Monitor revenue, production, orders, and customer activity from one place.</p></section>
+<section class="admin-dashboard"><div class="dashboard-grid">
+  <div class="dashboard-card"><span>Customers</span><strong>{{ stats.customers }}</strong></div><div class="dashboard-card"><span>Orders</span><strong>{{ stats.orders }}</strong></div><div class="dashboard-card"><span>Pending Orders</span><strong>{{ stats.pending_orders }}</strong></div><div class="dashboard-card"><span>Active Production</span><strong>{{ stats.production_active }}</strong></div><div class="dashboard-card"><span>Revenue</span><strong>{{ stats.revenue }}</strong></div><div class="dashboard-card"><span>Appointments</span><strong>{{ stats.appointments }}</strong></div>
+</div></section>
+{% endblock %}

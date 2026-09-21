@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Luxury tailoring marketplace and business management platform for bespoke fashion and custom tailoring." />
+    <title>{% block title %}Msadiq Couture{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a href="{{ url_for('index') }}" class="brand" aria-label="Msadiq Couture Home">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Msadiq Couture logo" />
+        </a>
+        {% if not request.path.startswith('/admin') %}
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation">Menu</button>
+        <nav class="main-nav" id="site-navigation" aria-label="Main navigation">
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('styles_page') }}">Styles</a>
+          <a href="{{ url_for('services_page') }}">Services</a>
+          <a href="{{ url_for('booking_page') }}">Booking</a>
+          <a href="{{ url_for('orders_page') }}">Orders</a>
+          <a href="{{ url_for('about') }}">About</a>
+          <a href="{{ url_for('contact') }}">Contact</a>
+        </nav>
+        {% endif %}
+        <div class="nav-actions">
+          {% if session.get('user_id') %}
+            {% if session.get('role') != 'admin' %}
+            <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% endif %}
+            <a class="btn btn-secondary" href="{{ url_for('profile') }}">Profile</a>
+            <a class="btn btn-secondary" href="{{ url_for('logout') }}">Logout</a>
+          {% else %}
+            <a class="btn btn-secondary" href="{{ url_for('login') }}">Login</a>
+          {% endif %}
+          {% if not request.path.startswith('/admin') %}
+          <a class="btn btn-primary" href="{{ url_for('booking_page') }}">Book a Tailor</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main>
+      {% if session.get('user_id') and session.get('role') != 'admin' and request.path != '/dashboard' and not request.path.startswith('/admin') %}
+        <div class="container dashboard-back-wrap">
+          <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Back to customer dashboard" title="Back to dashboard"><span aria-hidden="true">&larr;</span><span>Dashboard</span></a>
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <img class="footer-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="Msadiq Couture logo" />
+          <p>Premium tailoring expertise for weddings, corporate, traditional, and custom fashion.</p>
+        </div>
+        <div>
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="{{ url_for('styles_page') }}">Style Gallery</a></li>
+            <li><a href="{{ url_for('services_page') }}">Services</a></li>
+            <li><a href="{{ url_for('booking_page') }}">Bookings</a></li>
+            <li><a href="{{ url_for('orders_page') }}">Orders</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <ul>
+            <li><a href="{{ url_for('login') }}">Customer Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Visit</h4>
+          <ul>
+            <li>34 Victoria Island</li>
+            <li>Lagos, Nigeria</li>
+            <li>+234 800 123 4567</li>
+          </ul>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <span>© 2026 Msadiq Couture</span>
+        <span>Luxury tailoring • Premium craftsmanship</span>
+      </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

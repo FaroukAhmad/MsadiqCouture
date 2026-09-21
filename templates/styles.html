@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Style Marketplace | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Marketplace</p>
+    <h1>Explore our signature fashion collection</h1>
+  </div>
+</section>
+
+<section class="section catalog-section">
+  <div class="container catalog-layout">
+    <aside class="filter-panel">
+      <h3>Filter by category</h3>
+      <div class="filter-list">
+        <a class="filter-link {% if active_category == 'All' %}active{% endif %}" href="{{ url_for('styles_page') }}">All</a>
+        {% for category in categories %}
+          <a class="filter-link {% if active_category == category %}active{% endif %}" href="{{ url_for('styles_page', category=category) }}">{{ category }}</a>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <div class="catalog-content">
+      <form class="search-bar" method="get" action="{{ url_for('styles_page') }}">
+        <input type="search" name="q" placeholder="Search styles, categories, keywords" value="{{ request.args.get('q', '') }}" />
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+
+      <div class="card-grid catalog-grid">
+        {% for style in styles %}
+          <article class="style-card">
+            <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+            <div class="style-body">
+              <span class="badge">{{ style.category }}</span>
+              <h3>{{ style.name }}</h3>
+              <div class="meta-row">
+                <span>₦{{ "{:,.0f}".format(style.price) }}</span>
+                <span>{{ style.availability }}</span>
+              </div>
+              <p>{{ style.description }}</p>
+              <a href="{{ url_for('style_detail', slug=style.slug) }}" class="btn btn-secondary btn-small">View style</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

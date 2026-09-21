@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Contact | Msadiq Couture{% endblock %}
+{% block content %}
+<section class="page-hero small-hero">
+  <div class="container">
+    <p class="eyebrow">Contact</p>
+    <h1>Tell us about your next look</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container contact-layout">
+    <div class="contact-card">
+      <h3>Visit or connect</h3>
+      <p>34 Victoria Island, Lagos, Nigeria</p>
+      <p>hello@msadiqcouture.com</p>
+      <p>+234 800 123 4567</p>
+    </div>
+    <form class="contact-form" data-contact-form>
+      <label>
+        Full name
+        <input type="text" placeholder="Your full name" />
+      </label>
+      <label>
+        Email
+        <input type="email" placeholder="name@example.com" />
+      </label>
+      <label>
+        Message
+        <textarea rows="5" placeholder="Tell us what you need"></textarea>
+      </label>
+      <button type="submit" class="btn btn-primary">Send message</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

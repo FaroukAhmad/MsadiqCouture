@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-shell">
+  <aside class="admin-sidebar" aria-label="Admin operations">
+    <div class="admin-sidebar-header">
+      <p class="eyebrow">Workspace</p>
+      <h2>Operations</h2>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a class="{% if active_page == 'analytics' %}active{% endif %}" href="{{ url_for('admin') }}">Analytics</a>
+      <a class="{% if active_page == 'styles' %}active{% endif %}" href="{{ url_for('admin_styles') }}">Styles</a>
+      <a class="{% if active_page == 'services' %}active{% endif %}" href="{{ url_for('admin_services') }}">Services</a>
+      <a class="{% if active_page == 'booking' %}active{% endif %}" href="{{ url_for('admin_bookings') }}">Booking</a>
+      <a class="{% if active_page == 'payments' %}active{% endif %}" href="{{ url_for('admin_payments') }}">Payments</a>
+      <a class="{% if active_page == 'orders' %}active{% endif %}" href="{{ url_for('admin_orders') }}">Orders</a>
+      <a class="{% if active_page == 'admins' %}active{% endif %}" href="{{ url_for('admin_users') }}">Manage admin</a>
+    </nav>
+  </aside>
+  <main class="admin-page-content">
+    {% if active_page != 'analytics' %}
+      <a class="dashboard-back admin-back" href="{{ url_for('admin') }}" aria-label="Back to admin dashboard" title="Back to admin dashboard"><span aria-hidden="true">&larr;</span><span>Dashboard</span></a>
+    {% endif %}
+    {% block admin_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
