@@ -1,0 +1,320 @@
+diff --git a/.gitignore b/.gitignore
+index 83328cd..5805e4b 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,5 +2,8 @@ __pycache__/
+ *.pyc
+ .venv/
+ .env
+-static/uploads/*
+-!static/uploads/.gitkeep
++public/static/uploads/*
++!public/static/uploads/.gitkeep
++instance/
++.vercel/
++*.db
+diff --git a/README.md b/README.md
+index a6be27c..506bf86 100644
+--- a/README.md
++++ b/README.md
+@@ -65,6 +65,23 @@ The included `Dockerfile` and `Procfile` use the same WSGI entrypoint. Persist
+ the `instance/` database and `static/uploads/` storage, or replace them with
+ managed database/object storage before a multi-instance deployment.
+ 
++## Deploying on Vercel
++
++Vercel's filesystem is read-only, so SQLite and local uploads don't work there.
++
++1. In the Vercel project: Storage / Marketplace -> add a Postgres database (e.g. Neon) and connect it to the project. This sets `DATABASE_URL`.
++2. Project Settings -> Environment Variables: add `SECRET_KEY` (long random string). Optionally `PAYSTACK_*`, `SMTP_*`, `TWILIO_*`.
++3. From your own machine, once, create roles/categories and the first admin:
++
++       set DATABASE_URL=<the same Postgres URL>
++       set ADMIN_EMAIL=you@example.com
++       set ADMIN_PASSWORD=<12+ chars>
++       python init_db.py
++
++4. Redeploy. Static files live in `public/static/` (Vercel serves `public/` from its CDN).
++
++Known limitation: image uploads (avatars, style/service photos) are written to `/tmp` and do not persist on Vercel. Use the image URL fields, or add object storage (Vercel Blob / Cloudinary).
++
+ ## Tests
+ 
+    python -m pytest -q
+diff --git a/app.py b/app.py
+index 439f9b0..7ea9cce 100644
+--- a/app.py
++++ b/app.py
+@@ -15,9 +15,12 @@ from config import Config
+ from notifications import NotificationService
+ from payments import PaystackGateway, PaymentGatewayError
+ 
+-app = Flask(__name__)
++app = Flask(__name__, static_folder="public/static", static_url_path="/static")
+ app.config.from_object(Config)
+-Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
++try:
++    Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
++except OSError:  # read-only filesystem: don't crash at import time
++    app.logger.warning("Upload folder %s is not writable", app.config["UPLOAD_FOLDER"])
+ 
+ db = SQLAlchemy(app)
+ 
+diff --git a/config.py b/config.py
+index 5da4080..831191c 100644
+--- a/config.py
++++ b/config.py
+@@ -10,22 +10,48 @@ if load_dotenv:
+ 
+ 
+ BASE_DIR = Path(__file__).resolve().parent
++# Vercel sets VERCEL=1 at build and runtime. Its filesystem is read-only
++# (except /tmp) and every request may run on a fresh instance, so the app
++# needs a hosted database there instead of a local SQLite file.
++ON_VERCEL = bool(os.environ.get("VERCEL"))
++
++
++DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
++
++
++def _database_uri():
++    url = DATABASE_URL
++    if not url:
++        if ON_VERCEL:
++            raise RuntimeError(
++                "DATABASE_URL is not set. Add a hosted Postgres database "
++                "(e.g. Neon via the Vercel Marketplace) and set DATABASE_URL "
++                "in Project Settings > Environment Variables."
++            )
++        # Local development only: make sure the folder for the SQLite file exists.
++        (BASE_DIR / "instance").mkdir(exist_ok=True)
++        return f"sqlite:///{BASE_DIR / 'instance' / 'msadiq.db'}"
++    return url.replace("postgres://", "postgresql://", 1)
+ 
+ 
+ class Config:
+-    ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
++    ENVIRONMENT = os.environ.get("ENVIRONMENT") or ("production" if ON_VERCEL else "development")
+     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
+-    SEED_DEMO_DATA = os.environ.get("SEED_DEMO_DATA", "1") == "1"
+-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+-        "DATABASE_URL",
+-        f"sqlite:///{BASE_DIR / 'instance' / 'msadiq.db'}",
+-    ).replace("postgres://", "postgresql://", 1)
++    # Demo seeding creates well-known logins (admin123 etc.), so it only runs by
++    # default against the local SQLite fallback - never on Vercel or when a
++    # DATABASE_URL is configured. Set SEED_DEMO_DATA=1 to force it.
++    SEED_DEMO_DATA = os.environ.get("SEED_DEMO_DATA", "0" if (ON_VERCEL or DATABASE_URL) else "1") == "1"
++    SQLALCHEMY_DATABASE_URI = _database_uri()
++    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}
+     SQLALCHEMY_TRACK_MODIFICATIONS = False
+     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_BYTES", 5 * 1024 * 1024))
+-    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", str(BASE_DIR / "static" / "uploads"))
++    UPLOAD_FOLDER = os.environ.get(
++        "UPLOAD_FOLDER",
++        "/tmp/uploads" if ON_VERCEL else str(BASE_DIR / "public" / "static" / "uploads"),
++    )
+     SESSION_COOKIE_HTTPONLY = True
+     SESSION_COOKIE_SAMESITE = "Lax"
+-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
++    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "1" if ON_VERCEL else "0") == "1"
+     PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "")
+     PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "")
+     PAYSTACK_CALLBACK_URL = os.environ.get("PAYSTACK_CALLBACK_URL", "")
+diff --git a/init_db.py b/init_db.py
+new file mode 100644
+index 0000000..4491e0c
+--- /dev/null
++++ b/init_db.py
+@@ -0,0 +1,58 @@
++"""One-time setup for a fresh database (run from your own machine).
++
++    set DATABASE_URL=postgresql://...        (your Neon / hosted Postgres URL)
++    set ADMIN_EMAIL=you@example.com
++    set ADMIN_PASSWORD=a-long-unique-password
++    python init_db.py
++
++Creates the tables, the three roles, the default categories, and (optionally)
++the first admin account. Safe to re-run: existing rows are left alone.
++"""
++import os
++import sys
++
++from werkzeug.security import generate_password_hash
++
++from app import app, db, Role, User, Category
++
++
++def main():
++    email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
++    password = os.environ.get("ADMIN_PASSWORD", "")
++    if email and len(password) < 12:
++        sys.exit("ADMIN_PASSWORD must be at least 12 characters.")
++
++    with app.app_context():
++        db.create_all()
++        for name in ("customer", "staff", "admin"):
++            if not Role.query.filter_by(name=name).first():
++                db.session.add(Role(name=name))
++        for name, slug in [
++            ("Traditional Wear", "traditional-wear"),
++            ("Corporate Wear", "corporate-wear"),
++            ("Wedding Wear", "wedding-wear"),
++            ("Modern Wear", "modern-wear"),
++        ]:
++            if not Category.query.filter_by(slug=slug).first():
++                db.session.add(Category(name=name, slug=slug))
++        db.session.commit()
++
++        if email:
++            if User.query.filter_by(email=email).first():
++                print(f"Admin {email} already exists - left unchanged.")
++            else:
++                admin_role = Role.query.filter_by(name="admin").first()
++                db.session.add(User(
++                    full_name=os.environ.get("ADMIN_NAME", "Msadiq Administrator"),
++                    email=email,
++                    phone=os.environ.get("ADMIN_PHONE", "0000000000"),
++                    password_hash=generate_password_hash(password),
++                    role_id=admin_role.id,
++                ))
++                db.session.commit()
++                print(f"Created admin {email}.")
++        print("Database ready on:", db.engine.url.render_as_string(hide_password=True))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/instance/msadiq.db b/instance/msadiq.db
+deleted file mode 100644
+index 2527d8faef42157c9b335a846b87cf4fda34ad67..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 77824
+zcmeI5Pi)-SdB8cM*7_HD94lU>c2v`Ad)LC65+DClTcaLp$Bw#|td->TE`maRLq1Bh
+zIm0o@k*uwdLXH<fd+Vi0b7>GDz#e)}&{L6IdT0*qC1`_1b4}Yri?;WEkMl<}qZxUu
+z>;lo|BOsAOK0dzh_rCW%^8NeP-@hNEO!A|+OjAh{&I!4ka9ffDLAU^aQ}EZ^Cg5PW
+z`2+U3w&Q+>7lgUL_}U~~J)irfkYCUL;;fc`<LrM=o}c)S+%G5oe!MvGm!m%)|Hhds
+zqdy$}EAjU5ANPw0&%ZK(=cUn+>FMd*Cs$Ki3Rx6;EYALoEv^*{8%1fOaOZwedLujc
+zhIC_mEbyeIm5t)P;+nMbU_)AYc>n%QX?!dTuvw{<ODvW?D6B1hv#@qUS7ti`xwRyX
+z$}HZj&@yX<B4$@GP`2_*f}~MO!%bR_YL&ESdXki;wWRe7cmz+S$HHKT#e18*FS{|L
+zDf2c#%ijgzH<p%*Hzn$ogUV*il4?{*n6y#+aDzv+y0)}jSo=tNulSL4Bk;25AFeFD
+z|F9_CXooR7KKuOQS4XC=U(bDKH-lVDfIu~l{2*lQ$LBkcw_iDidlsxup3ohd(!<<P
+z4I@h>^*oT~kWKTv8>D+JU__}Ct3)YF1`@iFlI#(8AFLIZ?yYb*H=5_Awc_34T5)Bu
+zxGwQ?8MX0Q>-?GN_paxJpyIJ-$<q)rf0NeIDEqyc-P~ZcN!ou+eP{IC$h4;AKCv>Y
+zWk!=)%*w2iLS{X!u_Wzr>Z=`$djvQJ^?=&DMdK_H$LqMe4GC<~*1Af-E)9;kx*b&e
+z-kF4q?Hrb^?uZYwv!h^k6$dD{T*Z49hohQ5KKtU^XEQ7E=ikb*B1!i`kPiOkJ8);G
+zjsbi;u_UZ*wZuMRGh8URTM?A(K4oExfqos9g>K7KjRTkUG$cNl1kfu_y7S<{{bFH-
+zgQ>9HO&Z6+4h`E+dn|F|pqd6zB`Yx<h}|fR;?6?XaowjSNW(D!LPovKG-xxN-F6eo
+zdl1r60A=W~Aa@4}%5;lumT6FF!Q=*@BQ5nXTQm&8Rvr~4rfE>wlJ4GrP{>SS%yt5{
+zn>6vgg6i;~O{2;4_lWUm%huU;1JXR-Fe0=0Gt;-G`x%i;?>0%cJNNwlS4O5UT*$rn
+z)0Q#jW@WNNQ|tDrZ)NA#!tf;(6a&Ixi|`S3t!_t^{-v}^lVlevk<D$IY_}pgl1*_G
+zvVQtLVA*ZYfGo*Ja-i{$4*L9DgZx{QXQtn|(2sm(ursrL_W9EI$n>R4xfemky-N4E
+zm2B)LI_Nh}9%CumE7%sF?lOJM+ksn)V^(nwO9`o4yxw+j3vA0SJq+A1k7-OR33YjK
+zhZ@IcJjTO3C2E&VKS7T4d;+{s$P;I#3zzyqZ{XV`jf1bujvZGz>MTjN8-IRnq@GKc
+zvs@}g(Gw`@jooNRE;UXblS_Rn%x*AH`gXwjzNA1^GsIwsH$BLXR;G8Gx5Hq^n#$f8
+zJzy5W8{O}psbiX|S9o;^8iI^;U}~H^2GjA?-m#TR|7y#taVrfKQS)8A8&nqoxXf)q
+zX8Bw99I-e913Gv|9GRY($vt1n05#2Zb3fdHsCjl!Ms`=p>UcBgzIfbwIwzlr-BAaP
+z&(6PgW_od^U-@b#cT;U1otYmV=myff;kAQYE~|wOSjLANRQ@;A!KH3y`_@7odh^O+
+zkI%j}be!qt58ovGzsSGM#r(es`TxoP8g{rL0VIF~kN^@u0!RP}AOR$R1dsp{Kmw<a
+zz^Et+(^)U)=nx!1!;tS!<V0bn*?u<;GKu+L3He{;|2O~dr%ymkF%m!mNB{{S0VIF~
+zkN^@u0!RP}AOR#G2xH=OF8lr$`BC=$KQtlEj5WXidH?@#{@X(SU-Li7e;*ETLjp(u
+z2_OL^fCP{L5<mh-00|%gB!C1yX95?8hlQ(Gmm`?ISdktvm|dD3%DZs*4RKhwe*F>i
+zJU$_hU)-%9XIG`6VPST5F^a1ZOa@`ub+`E|3vn$sEXeXkOuc|l7J=!EJPw$4)cl==
+z;{E@_`JV{+e}V7+|IGix=PV#bhXjxS5<mh-00|%gB!C2v01`j~NB{}^1_bir)m&S<
+z!SFfpdak{#Ks+zb<~o}PhNeV$th+q`zyE)OOu$=_01`j~NB{{S0VIF~kN^@u0!RP}
+ze8B|x_kY`9f$aOgeSARn{ogqtAp8FB?*Gr$|C{^+AwPX~9(K4P0VIF~kN^@u0!RP}
+zAOR$R1du=v0tZ!bLNE?yhGs4w6bpqgWsP<D-;~x^l?HLL8Z$Ql$5MWfW^Pre_ZZw{
+zapxF`L@S=u@FygJ&!&`*<K~O{gDW<PJp&&>eAst2U@lAM=%<=&NFLow3Uxm)A=^&V
+zYO*jtpRMYj%+)GMH3W|$b8b|g2M;7^Bojl`4Mo>%+tC%dL|kI2s%dD9{2_P3bgS<3
+z?M+DAEjNy;Z|>f56y?pQw`@gKR8v+QnOG7r7gS||7;~0oSeA0Yh9-phg9-7<B@nsU
+z;k*I<P@)*pd%yOq23}>r+l>d~&AEi&un4?(rOg1+Zjf$E;MxG(R~=$WYE>A<p3V(D
+z6^JgYB$ISCs@6gp4<aWqY}+&q%OslY_?khClHyvne^NP3>%h-V2=c+Cc$sJIV&>aS
+zYKeJ=I}Cfmq?A2N!O@olejI|WN+vJRlw5EoRtv#NSu;Cpl>nSpHFG<e%Ozj8WTKoP
+zLy5uj(9%prW=wHaM{zuZ*e4cL<=_89`3FM&Q}~A)5<mh-00|%gB!C2v01`j~NB{{S
+z0VFU8fk#85!u9zpmo61HqEa9&!-V^wk{oF#X*RH^y1Jk#((3XmxG;wHljiyMh8Nq>
+zG-7;^8x=0gS7t633LceKcB7=$-73+%SyhR$peRydc`>T^0eGzTnwPrcRh-GQKN7^V
+zL^w<GpX4tLA|i%C0!RP}AOR$R1dsp{Kmter2_S*r2?B9$Opq@Vab7NL6qfGG^-oI$
+zHq!bsy+cbS8cS=z7M0ebJsPs1fBtlp?(u;SQtPAiE`@Od?&0sFAF1Y?qB+p74`8eE
+zED>knv%2${+TwOlVO~vo@Pxv6hIQzMr)e!_(jU=~mV!Mx^u2QrVpv`eMr61w*kNAZ
+zFYWrnO#ZNn2r|xEFMnRUpsi=W`Xl#-;Ca_A(R!;}KDE6W;hVIUP>`%#rBd-3b89IG
+zB!25pmKjYz=1#gx6=^k&yqe2LA@oCQ>UIBrKNVo@zhC5k`a7Y)C?pa<0!RP}AOR$R
+z1dsp{Kmter2_S(}NZ@Otoa=5C5qq3e>+An@wx5t}{(oK&@_(EE5O%mB0VIF~kN^@u
+z0!RP}AOR$R1dsp{_)-%1fOqwaQ?oNihZaCT{>r_TRX&8DhT)#HN&^oDF(fH<pRBIK
+z{C!31)vvB<#8Jo^@6s2iE?qqmuL?c(Jl^_<|GQx=g>@r#=?=U5h{vh+iPLuMH9qu0
+zoVs!}tpvtbK%DC}7gmc%{94$VPSQ6{Qt$u&OvwK_|9|<<zLZ&vLLmVpfCP{L5<mh-
+z00|%gB!C2v0226e6POS$<r*y&B0p}lFbs{0m&WSn>;3<evXCD=dl7cHAps<S1dsp{
+zKmter2_OL^fCP{LCvfl>dW)~Vef9bKV}*6<1y7{H$24Y?|GT|ahDGlA^81QIR82Qb
+z%T^ON-m9hynrfN$g1tblX?NFlKPtYvbnoNXaF>$!nyS;1U81hyF;mxw@46-<hT)Wm
+zt*SQFN}lEu(<iXfyIq3W@Tyv}4Qjj8(iE*^5l=T<>Z_*CT;fubUs845cMa1ZuBEA-
+zW4NAGaumy?gnByB4CXnEK@eSm$eTUGu;@Nf7Yt`XS76e;t=Q(l6X?ReDrdqLf@GUY
+zcUTxklpo$MCm{aQOj=tp`0Rg}|9?bU_TXV{XZ@oO&5hkB<*jFH*Id^%m<>r#RcaE$
+zahPlCj;Xjhu{@__D=yKQW)aiUU1s@;TJk){bzH@=Y|kPVRp2r)T;CzgQgy4OQPogX
+zkk%rOZ|YPxG)rTSQ_@toq*CaMS1eD{RmC)X$c3h~?d#yFj%{i7K@B?B4K8i2u$&1e
+z6})m#0Y41jmjQe;@E@IGYjv@eBVvE}=;Mb=#W-16dt}=sUAYD+CX8AXvdgh4^Gv;@
+z>xNN+4AOmz_#i24;J!e$iLJYi0|^I@29{D{s%{!Ogrr3GHH+$=2e<ng(Ml!X^IV&#
+zhG#p9PZiTQnO|a5)fLx)EYyjwP^F|9nkM#>TQ%$b|39nG|Nj{lb0mNSkN^@u0!RP}
+zAOR$R1dsp{KmthMx0Jw?_;#+V2`Zca-`!G^&HwLi$Cw=Xt}y)CW8t;Olb=oec<gU}
+zOJ&4lAps<S1Wqx57Z-D{3q&597RSa87M=I5%p4S-|Jg{c(7uRleYM<}ubC^uinb}O
+z$O%gyMX<IjOz~>C*R5Y@y3%FkpjMX3(N4Ai>`jS<Y>UD=yFPEchShPmZf1^YVX571
+zso=woR@(gWdW`$#P3G=Jp|`)Z6UBS`?=n{9o@=70Qb-~h9Nq4(2jLT`6vC9X{lzFv
+z!Ao%h-fb&Hk%^vpv4z!U!Gp2;WDsw?C-qAFMaI29K;+O-Vd>CFPl#p8wyvqF$_O(o
+z_hsI9Z%=92*3+-DVXMT_zzOfy1wwM59HR#Xxp=v$9IaJ_TPqrKSHsyF$MWOG8pp$R
+z{rKLw<p@?fhMWk(?Wo3JUSVBFwqoism=xHS?c6nU6_yO<ssmkCuyisg3^<+!7t=Dh
+zj^<vQx%=t5F1c)O9d6ja!(vd6Md<J<!@nxq2lv*E7`RUC!&=O~A60CbsIRUR4$&OL
+z(sk36DRgZqs^t>TF1?KH0QqL9CyaX#r8u#V?WR(^-K%egD}@a!Q4hViF#Nh;_0WrU
+zqtVh4RE>5o=3i#jcyU#HU2v@2lsGzeV7>F+mDxsRQePds>2R!ANmv=|whOM|lfaeh
+zj@f0pRiYjhmsw@_@BXU*-siW#TYJ-Kdv>j}a%s75zbR$a2={vq3y#+-mdwMu3`W7*
+zJG2*Bb@FICNZJ0~h<mq}?!}B%?!=Kxy<YW6R=I%lcVcIzqv6{Oys1Mqvo%Ogp412Y
+z7a8|p2IPd+>GsrL^X>aneGQ2ILK*_=;eeJvt+J>sUU{pbB|TS?XU!$$;gthwm?)N$
+zT96KbmcWelH3sh!%##|IBz{RMLtbXpMm3Inn0O8=&4VJj-0PgjDlRBUH45P+1nvvr
+z?xdkG&s-Qtz+C}&F|D$>#cdk95e@fO=+55$oe-wiFQqgL;5}tGio&j1hNv<zGaXsx
+zPfsH$;_Lell8w;AZaJ3YK!?8!UGJ9V7`ElQ{^wE0oHXviRD>9os+yK&Dl%h=3xh!%
+z&mi{85`O#qKl1J8*ZQi6!u$V+^FI*sKhFOX_yG99DSpAmq$2?&fCP{L5<mh-00|%g
+zB!C2v01`O01YQ?Ou1B-(?}=8fccb1#(aH5`$(a)6vF@%VzW%>(?$qMJgd+hYfCP{L
+z5<mh-00|%gB!C2v01`j~0}#OP{{bLj5F~&EkN^@u0!RP}AOR$R1dsp{Kmw<n03ZL4
+k{r{&t6EXQn00|%gB!C2v01`j~NB{{S0VIF~UP9pi0k%mSU;qFB
+
+diff --git a/static/css/styles.css b/public/static/css/styles.css
+similarity index 100%
+rename from static/css/styles.css
+rename to public/static/css/styles.css
+diff --git a/static/images/logo.png b/public/static/images/logo.png
+similarity index 100%
+rename from static/images/logo.png
+rename to public/static/images/logo.png
+diff --git a/static/js/app.js b/public/static/js/app.js
+similarity index 100%
+rename from static/js/app.js
+rename to public/static/js/app.js
+diff --git a/static/uploads/.gitkeep b/public/static/uploads/.gitkeep
+similarity index 100%
+rename from static/uploads/.gitkeep
+rename to public/static/uploads/.gitkeep
+diff --git a/requirements.txt b/requirements.txt
+index a98db84..1e5783f 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -3,3 +3,4 @@ Flask-SQLAlchemy==3.1.1
+ gunicorn==23.0.0
+ pytest==8.3.5
+ python-dotenv==1.0.1
++psycopg2-binary==2.9.11
+diff --git a/tests/conftest.py b/tests/conftest.py
+new file mode 100644
+index 0000000..e712009
+--- /dev/null
++++ b/tests/conftest.py
+@@ -0,0 +1,10 @@
++import os
++import tempfile
++
++# Must be set before `app` is imported: the engine is bound at import time.
++_tmp = tempfile.mkdtemp(prefix="msadiq-tests-")
++os.environ["DATABASE_URL"] = f"sqlite:///{os.path.join(_tmp, 'test.db')}"
++os.environ["SEED_DEMO_DATA"] = "1"
++os.environ["ENVIRONMENT"] = "development"
++os.environ["UPLOAD_FOLDER"] = os.path.join(_tmp, "uploads")
++os.environ.pop("VERCEL", None)
