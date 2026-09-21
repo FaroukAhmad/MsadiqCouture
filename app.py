@@ -604,13 +604,14 @@ def logout():
 def dashboard():
     user = current_user()
     recent_orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter_by(customer_name=user.full_name).order_by(Booking.created_at.desc()).all()
 
     order_numbers = [order.order_number for order in recent_orders]
     payments = Payment.query.filter(Payment.order_number.in_(order_numbers)).order_by(Payment.created_at.desc()).all() if order_numbers else []
     measurements = MeasurementRequest.query.filter_by(customer_name=user.full_name).order_by(MeasurementRequest.created_at.desc()).all()
 
-    return render_template('dashboard.html', user=user, orders=recent_orders, payments=payments, measurements=measurements, stats={
-        'bookings': Booking.query.filter_by(customer_name=user.full_name).count(),
+    return render_template('dashboard.html', user=user, orders=recent_orders, bookings=bookings, payments=payments, measurements=measurements, stats={
+        'bookings': len(bookings),
         'orders': len(recent_orders),
         'status': recent_orders[0].status if recent_orders else 'No orders yet',
     })

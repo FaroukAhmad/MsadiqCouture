@@ -61,9 +61,12 @@ button, input, textarea { font: inherit; }
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: center;
+  flex: 1 1 auto;
+  gap: clamp(14px, 2vw, 28px);
   color: var(--neutral-700);
   font-size: 0.96rem;
+  white-space: nowrap;
 }
 
 .main-nav a {
@@ -89,7 +92,11 @@ button, input, textarea { font: inherit; }
   display: flex;
   align-items: center;
   gap: 14px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
+
+.header-booking { padding: 0.78rem 1.1rem; }
 
 .menu-toggle { display: none; }
 
@@ -602,6 +609,13 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 .dashboard-intro { max-width: 620px; color: var(--neutral-700); margin: 0; }
 .dashboard-primary { border-top: 1px solid rgba(18,18,18,0.05); }
 .dashboard-list li { background: rgba(255,255,255,0.66); padding: 1rem; border: 1px solid rgba(18,18,18,0.05); border-radius: 14px; }
+.booking-history-grid { display: grid; gap: 12px; }
+.booking-history-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1.1rem 1.25rem; background: var(--white); border: 1px solid rgba(18,18,18,0.06); border-radius: 14px; box-shadow: var(--shadow-soft); }
+.booking-history-card div { display: grid; gap: 4px; }
+.booking-history-card span:not(.booking-status) { color: var(--neutral-700); font-size: 0.9rem; }
+.booking-status { padding: 0.38rem 0.7rem; border-radius: 999px; background: rgba(212,167,61,0.14); color: var(--gold-600); font-size: 0.8rem; font-weight: 700; }
+.booking-status-confirmed, .booking-status-completed { background: rgba(42,128,82,0.1); color: #1c5a3a; }
+.booking-status-rejected { background: rgba(190,54,54,0.1); color: #7a2121; }
 
 .auth-note {
   text-align: center;

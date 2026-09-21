@@ -9,6 +9,22 @@
   </div>
 </section>
 
+<section class="section dashboard-bookings">
+  <div class="container">
+    <div class="section-heading"><p class="eyebrow">Appointments</p><h2>Booking history</h2></div>
+    <div class="booking-history-grid">
+      {% for booking in bookings %}
+        <article class="booking-history-card">
+          <div><strong>{{ booking.service_name }}</strong><span>{{ booking.preferred_date }} at {{ booking.preferred_time }}</span></div>
+          <span class="booking-status booking-status-{{ booking.status|lower|replace(' ', '-') }}">{{ booking.status }}</span>
+        </article>
+      {% else %}
+        <div class="panel"><p>No booking requests yet.</p><a class="btn btn-primary" href="{{ url_for('booking_page') }}">Book an appointment</a></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
 <section class="section">
   <div class="container dashboard-grid">
     <div class="dashboard-card"><span>Bookings</span><strong>{{ stats.bookings }}</strong></div>

@@ -40,7 +40,7 @@
             <a class="btn btn-secondary" href="{{ url_for('login') }}">Login</a>
           {% endif %}
           {% if not request.path.startswith('/admin') %}
-          <a class="btn btn-primary" href="{{ url_for('booking_page') }}">Book a Tailor</a>
+          <a class="btn btn-primary header-booking" href="{{ url_for('booking_page') }}">Book a Tailor</a>
           {% endif %}
         </div>
       </div>
