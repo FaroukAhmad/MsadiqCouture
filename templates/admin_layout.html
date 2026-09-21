@@ -18,7 +18,7 @@
   </aside>
   <main class="admin-page-content">
     {% if active_page != 'analytics' %}
-      <a class="dashboard-back admin-back" href="{{ url_for('admin') }}" aria-label="Back to admin dashboard" title="Back to admin dashboard"><span aria-hidden="true">&larr;</span><span>Dashboard</span></a>
+      <a class="dashboard-back admin-back" href="{{ url_for('admin') }}" aria-label="Back to admin dashboard" title="Back to admin dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
     {% endif %}
     {% block admin_content %}{% endblock %}
   </main>

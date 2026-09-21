@@ -49,7 +49,7 @@
     <main>
       {% if session.get('user_id') and session.get('role') != 'admin' and request.path != '/dashboard' and not request.path.startswith('/admin') %}
         <div class="container dashboard-back-wrap">
-          <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Back to customer dashboard" title="Back to dashboard"><span aria-hidden="true">&larr;</span><span>Dashboard</span></a>
+          <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Back to customer dashboard" title="Back to dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
         </div>
       {% endif %}
       {% block content %}{% endblock %}
