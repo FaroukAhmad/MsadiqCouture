@@ -422,6 +422,28 @@ def slugify(value):
     return value.strip("-")
 
 
+def unique_style_slug(requested, name, exclude_id=None):
+    """Slugify `requested` (falling back to `name`), then make it unique.
+
+    An empty/blank slug field previously passed through as "" and caused a
+    duplicate-key error on the second style. This always returns a
+    non-empty, collision-free slug.
+    """
+    base = slugify(requested) or slugify(name) or "style"
+    slug = base
+    n = 2
+    query = Style.query.filter(Style.slug == slug)
+    if exclude_id is not None:
+        query = query.filter(Style.id != exclude_id)
+    while query.first() is not None:
+        slug = f"{base}-{n}"
+        n += 1
+        query = Style.query.filter(Style.slug == slug)
+        if exclude_id is not None:
+            query = query.filter(Style.id != exclude_id)
+    return slug
+
+
 def dashboard_stats():
     total_revenue = sum(order.total_amount for order in Order.query.all())
     active_production = Order.query.filter(~Order.status.in_(["Order Received", "Completed"])).count()
@@ -874,7 +896,7 @@ def admin_create_style():
 
     style = Style(
         name=name,
-        slug=slugify(request.form.get('slug', name)),
+        slug=unique_style_slug(request.form.get('slug', ''), name),
         category_id=category_id or 1,
         gender=request.form.get('gender', 'Women'),
         price=price or 150000,
@@ -998,7 +1020,10 @@ def admin_delete_style(style_id):
 def admin_edit_style(style_id):
     style = Style.query.get_or_404(style_id)
     style.name = request.form.get('name', style.name).strip() or style.name
-    style.slug = slugify(request.form.get('slug', style.slug))
+    if 'slug' in request.form:
+        # Only touch the slug if the form actually sent one (the inline
+        # edit form doesn't); an empty value falls back to the name.
+        style.slug = unique_style_slug(request.form.get('slug', ''), style.name, exclude_id=style.id)
     style.price = request.form.get('price', type=int) or style.price
     style.description = request.form.get('description', style.description).strip()
     style.availability = request.form.get('availability', style.availability).strip()
