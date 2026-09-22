@@ -49,7 +49,9 @@ def _database_uri():
 
 class Config:
     ENVIRONMENT = os.environ.get("ENVIRONMENT") or ("production" if ON_VERCEL else "development")
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
+    # `or` (not a dict default) so a variable that exists but is blank is
+    # treated the same as missing, instead of silently becoming "".
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-change-me"
     # Demo seeding creates well-known logins (admin123 etc.), so it only runs by
     # default against the local SQLite fallback - never on Vercel or when a
     # DATABASE_URL is configured. Set SEED_DEMO_DATA=1 to force it.
