@@ -1,4 +1,12 @@
 import os
+
+
+def _int_env(name, default):
+    """Read an int env var, tolerating unset OR empty-string values."""
+    val = os.environ.get(name)
+    if val is None or val.strip() == "":
+        return default
+    return int(val)
 from pathlib import Path
 try:
     from dotenv import load_dotenv
@@ -44,7 +52,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _database_uri()
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_BYTES", 5 * 1024 * 1024))
+    MAX_CONTENT_LENGTH = _int_env("MAX_UPLOAD_BYTES", 5 * 1024 * 1024)
     UPLOAD_FOLDER = os.environ.get(
         "UPLOAD_FOLDER",
         "/tmp/uploads" if ON_VERCEL else str(BASE_DIR / "public" / "static" / "uploads"),
@@ -56,7 +64,7 @@ class Config:
     PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "")
     PAYSTACK_CALLBACK_URL = os.environ.get("PAYSTACK_CALLBACK_URL", "")
     SMTP_HOST = os.environ.get("SMTP_HOST", "")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_PORT = _int_env("SMTP_PORT", 587)
     SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@msadiqcouture.com")
