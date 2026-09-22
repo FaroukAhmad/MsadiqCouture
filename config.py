@@ -1,13 +1,6 @@
 import os
-
-
-def _int_env(name, default):
-    """Read an int env var, tolerating unset OR empty-string values."""
-    val = os.environ.get(name)
-    if val is None or val.strip() == "":
-        return default
-    return int(val)
 from pathlib import Path
+
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -17,12 +10,24 @@ if load_dotenv:
     load_dotenv()
 
 
+def _int_env(name, default):
+    """Read an int env var, tolerating unset OR empty-string values.
+
+    Vercel (and copy-pasted .env files) can leave a variable present but
+    blank, and int("") raises ValueError, which crashes the app at import
+    time. Treat blank the same as unset.
+    """
+    val = os.environ.get(name)
+    if val is None or val.strip() == "":
+        return default
+    return int(val)
+
+
 BASE_DIR = Path(__file__).resolve().parent
 # Vercel sets VERCEL=1 at build and runtime. Its filesystem is read-only
 # (except /tmp) and every request may run on a fresh instance, so the app
 # needs a hosted database there instead of a local SQLite file.
 ON_VERCEL = bool(os.environ.get("VERCEL"))
-
 
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
 
