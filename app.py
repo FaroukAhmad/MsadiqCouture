@@ -15,9 +15,12 @@ from config import Config
 from notifications import NotificationService
 from payments import PaystackGateway, PaymentGatewayError
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="public/static", static_url_path="/static")
 app.config.from_object(Config)
-Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+try:
+    Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+except OSError:  # read-only filesystem: don't crash at import time
+    app.logger.warning("Upload folder %s is not writable", app.config["UPLOAD_FOLDER"])
 
 db = SQLAlchemy(app)
 

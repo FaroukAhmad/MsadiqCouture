@@ -4,3 +4,15 @@ __pycache__/
 .env
 static/uploads/*
 !static/uploads/.gitkeep
+
+instance/
+.vercel/
+*.db
+public/static/uploads/*
+!public/static/uploads/.gitkeep
+
+instance/
+.vercel/
+*.db
+public/static/uploads/*
+!public/static/uploads/.gitkeep
