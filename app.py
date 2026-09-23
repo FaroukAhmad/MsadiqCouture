@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 from notifications import NotificationService
 from payments import PaystackGateway, PaymentGatewayError
+import image_storage
 
 app = Flask(__name__, static_folder="public/static", static_url_path="/static")
 app.config.from_object(Config)
@@ -396,6 +397,28 @@ def allowed_upload(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in {"jpg", "jpeg", "png", "webp"}
 
 
+def store_uploaded_image(file_storage, prefix, folder="msadiq"):
+    """Save an uploaded image and return its public URL.
+
+    Uses Cloudinary when configured (works on Vercel, since /tmp there is
+    ephemeral and not web-served). Falls back to local disk otherwise,
+    which is fine for local development but NOT for a Vercel deployment.
+    Raises image_storage.UploadError with a user-facing message on failure.
+    """
+    if image_storage.is_configured():
+        return image_storage.upload_image(file_storage, folder=folder)
+
+    if current_app.config.get("ON_VERCEL"):
+        raise image_storage.UploadError(
+            "Image uploads aren't set up yet on this deployment. "
+            "Paste an image URL instead, or ask your developer to configure Cloudinary."
+        )
+
+    filename = f"{prefix}-{secrets.token_hex(8)}-{secure_filename(file_storage.filename)}"
+    file_storage.save(Path(current_app.config['UPLOAD_FOLDER']) / filename)
+    return url_for('static', filename=f'uploads/{filename}')
+
+
 def notify_customer(customer_name, subject, body):
     user = User.query.filter_by(full_name=customer_name).first()
     if not user:
@@ -670,9 +693,11 @@ def profile():
             if not allowed_upload(upload.filename):
                 flash('Avatar must be JPG, PNG, or WEBP.', 'error')
                 return redirect(url_for('profile'))
-            filename = f"avatar-{user.id}-{secrets.token_hex(8)}-{secure_filename(upload.filename)}"
-            upload.save(Path(current_app.config['UPLOAD_FOLDER']) / filename)
-            profile_record.avatar = url_for('static', filename=f'uploads/{filename}')
+            try:
+                profile_record.avatar = store_uploaded_image(upload, f"avatar-{user.id}", folder="msadiq/avatars")
+            except image_storage.UploadError as e:
+                flash(str(e), 'error')
+                return redirect(url_for('profile'))
         db.session.add(profile_record)
         db.session.commit()
         session['user_name'] = user.full_name
@@ -889,9 +914,11 @@ def admin_create_style():
         if not allowed_upload(image_upload.filename):
             flash('Style image must be JPG, PNG, or WEBP.', 'error')
             return redirect(url_for('admin_styles'))
-        filename = f"style-{secrets.token_hex(8)}-{secure_filename(image_upload.filename)}"
-        image_upload.save(Path(current_app.config['UPLOAD_FOLDER']) / filename)
-        image_main = url_for('static', filename=f'uploads/{filename}')
+        try:
+            image_main = store_uploaded_image(image_upload, "style", folder="msadiq/styles")
+        except image_storage.UploadError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('admin_styles'))
     image_gallery = request.form.get('image_gallery', '').strip() or image_main
 
     style = Style(
@@ -1034,9 +1061,11 @@ def admin_edit_style(style_id):
         if not allowed_upload(image_upload.filename):
             flash('Style image must be JPG, PNG, or WEBP.', 'error')
             return redirect(url_for('admin_styles'))
-        filename = f"style-{secrets.token_hex(8)}-{secure_filename(image_upload.filename)}"
-        image_upload.save(Path(current_app.config['UPLOAD_FOLDER']) / filename)
-        style.image_main = url_for('static', filename=f'uploads/{filename}')
+        try:
+            style.image_main = store_uploaded_image(image_upload, "style", folder="msadiq/styles")
+        except image_storage.UploadError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('admin_styles'))
         style.image_gallery = style.image_main
     db.session.commit()
     flash('Style updated.', 'success')
@@ -1118,9 +1147,11 @@ def admin_edit_service(service_id):
         if not allowed_upload(image_upload.filename):
             flash('Service image must be JPG, PNG, or WEBP.', 'error')
             return redirect(url_for('admin_services'))
-        filename = f"service-{secrets.token_hex(8)}-{secure_filename(image_upload.filename)}"
-        image_upload.save(Path(current_app.config['UPLOAD_FOLDER']) / filename)
-        service.image = url_for('static', filename=f'uploads/{filename}')
+        try:
+            service.image = store_uploaded_image(image_upload, "service", folder="msadiq/services")
+        except image_storage.UploadError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('admin_services'))
     db.session.commit()
     flash('Service updated.', 'success')
     return redirect(url_for('admin_services'))

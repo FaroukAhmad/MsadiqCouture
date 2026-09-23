@@ -48,6 +48,7 @@ def _database_uri():
 
 
 class Config:
+    ON_VERCEL = ON_VERCEL
     ENVIRONMENT = os.environ.get("ENVIRONMENT") or ("production" if ON_VERCEL else "development")
     # `or` (not a dict default) so a variable that exists but is blank is
     # treated the same as missing, instead of silently becoming "".
