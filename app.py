@@ -953,13 +953,25 @@ def admin_create_service():
         flash('Service name is required.', 'error')
         return redirect(url_for('admin_services'))
 
+    image = request.form.get('image', '').strip() or 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80'
+    image_upload = request.files.get('image_file')
+    if image_upload and image_upload.filename:
+        if not allowed_upload(image_upload.filename):
+            flash('Service image must be JPG, PNG, or WEBP.', 'error')
+            return redirect(url_for('admin_services'))
+        try:
+            image = store_uploaded_image(image_upload, "service", folder="msadiq/services")
+        except image_storage.UploadError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('admin_services'))
+
     service = Service(
         name=name,
         description=request.form.get('description', '').strip() or 'Tailoring service for premium finishes and personalization.',
         price=request.form.get('price', type=int) or 50000,
         duration=request.form.get('duration', '7-10 days').strip(),
         status=request.form.get('status', 'Available').strip(),
-        image=request.form.get('image', '').strip() or 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80'
+        image=image
     )
     db.session.add(service)
     db.session.commit()
@@ -1054,8 +1066,23 @@ def admin_edit_style(style_id):
     style.price = request.form.get('price', type=int) or style.price
     style.description = request.form.get('description', style.description).strip()
     style.availability = request.form.get('availability', style.availability).strip()
-    style.featured = 'featured' in request.form
-    style.new_arrival = 'new_arrival' in request.form
+    style.lead_time = request.form.get('lead_time', style.lead_time).strip() or style.lead_time
+    style.colors = request.form.get('colors', style.colors).strip() or style.colors
+    style.fabrics = request.form.get('fabrics', style.fabrics).strip() or style.fabrics
+    if request.form.get('category_id', type=int):
+        style.category_id = request.form.get('category_id', type=int)
+    if request.form.get('gender'):
+        style.gender = request.form.get('gender')
+    # The quick inline form (name/price only) doesn't send these checkboxes at
+    # all, so only touch them when the submitting form actually has the
+    # checkbox fields - otherwise a quick save was silently unchecking both.
+    if 'style_full_edit' in request.form:
+        style.featured = 'featured' in request.form
+        style.new_arrival = 'new_arrival' in request.form
+    image_url = request.form.get('image_main', '').strip()
+    if image_url:
+        style.image_main = image_url
+        style.image_gallery = image_url
     image_upload = request.files.get('image_file')
     if image_upload and image_upload.filename:
         if not allowed_upload(image_upload.filename):
@@ -1142,6 +1169,9 @@ def admin_edit_service(service_id):
     service.price = request.form.get('price', type=int) or service.price
     service.duration = request.form.get('duration', service.duration).strip()
     service.status = request.form.get('status', service.status).strip()
+    image_url = request.form.get('image', '').strip()
+    if image_url:
+        service.image = image_url
     image_upload = request.files.get('image_file')
     if image_upload and image_upload.filename:
         if not allowed_upload(image_upload.filename):
