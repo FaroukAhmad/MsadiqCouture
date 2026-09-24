@@ -4,25 +4,61 @@
 <section class="page-hero small-hero">
   <div class="container">
     <p class="eyebrow">Account settings</p>
-    <h1>Keep your client profile current</h1>
+    <h1>Your profile</h1>
   </div>
 </section>
 <section class="section">
-  <div class="container auth-card">
-    <div class="panel">
-      {% if profile.avatar %}<img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />{% endif %}
-      <h3>Personal details</h3>
-      <form class="contact-form" method="post" enctype="multipart/form-data">
+  <div class="container auth-card profile-card-wrap">
+    <div class="panel profile-panel">
+
+      <div class="profile-view" data-profile-view>
+        <div class="profile-avatar-wrap">
+          {% if profile.avatar %}
+            <img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />
+          {% else %}
+            <div class="profile-avatar profile-avatar-placeholder" aria-hidden="true">{{ user.full_name[:1] | upper }}</div>
+          {% endif %}
+        </div>
+        <h3 class="profile-name">{{ user.full_name }}</h3>
+        <p class="profile-role">{{ session.get('role', 'customer') | capitalize }}</p>
+
+        <dl class="profile-details">
+          <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+          <div><dt>Phone</dt><dd>{{ user.phone }}</dd></div>
+          <div><dt>Address</dt><dd>{{ profile.address or 'Not provided' }}</dd></div>
+          <div><dt>City</dt><dd>{{ profile.city or 'Not provided' }}</dd></div>
+          <div><dt>Tailoring notes</dt><dd>{{ profile.notes or 'Not provided' }}</dd></div>
+        </dl>
+
+        <button type="button" class="btn btn-primary profile-edit-btn" data-profile-edit>Edit profile</button>
+      </div>
+
+      <form class="contact-form profile-form" method="post" enctype="multipart/form-data" data-profile-form hidden>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="profile-avatar-wrap">
+          {% if profile.avatar %}
+            <img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />
+          {% else %}
+            <div class="profile-avatar profile-avatar-placeholder" aria-hidden="true">{{ user.full_name[:1] | upper }}</div>
+          {% endif %}
+        </div>
+
+        <label>Profile photo<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" /></label>
         <label>Full name<input name="full_name" value="{{ user.full_name }}" required /></label>
         <label>Email<input type="email" name="email" value="{{ user.email }}" required /></label>
         <label>Phone<input name="phone" value="{{ user.phone }}" required /></label>
-        <label>Profile photo<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" /></label>
         <label>Address<input name="address" value="{{ profile.address or '' }}" /></label>
         <label>City<input name="city" value="{{ profile.city or '' }}" /></label>
         <label>Tailoring notes<textarea name="notes" rows="4">{{ profile.notes or '' }}</textarea></label>
-        <button class="btn btn-primary" type="submit">Save profile</button>
+        <label>New password <span class="field-hint">(leave blank to keep current)</span><input type="password" name="password" autocomplete="new-password" /></label>
+
+        <div class="profile-form-actions">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-secondary" data-profile-cancel>Cancel</button>
+        </div>
       </form>
+
     </div>
   </div>
 </section>

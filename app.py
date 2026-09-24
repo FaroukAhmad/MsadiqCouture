@@ -156,7 +156,7 @@ class UserProfile(db.Model):
     address = db.Column(db.String(255), nullable=True)
     city = db.Column(db.String(100), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    user = db.relationship("User", backref=db.backref("profile", uselist=False))
+    user = db.relationship("User", backref=db.backref("profile", uselist=False, cascade="all, delete-orphan"))
 
 
 class MeasurementRequest(db.Model):
@@ -484,7 +484,7 @@ def dashboard_stats():
 
 @app.route('/')
 def index():
-    featured = Style.query.filter_by(featured=True).limit(4).all()
+    featured = Style.query.filter_by(featured=True).order_by(Style.created_at.desc()).all()
     services = Service.query.limit(3).all()
     return render_template('index.html', styles=featured, services=services, stats=dashboard_stats())
 
@@ -698,6 +698,12 @@ def profile():
             except image_storage.UploadError as e:
                 flash(str(e), 'error')
                 return redirect(url_for('profile'))
+        new_password = request.form.get('password', '')
+        if new_password:
+            if len(new_password) < 8:
+                flash('New password must be at least 8 characters.', 'error')
+                return redirect(url_for('profile'))
+            user.password_hash = generate_password_hash(new_password)
         db.session.add(profile_record)
         db.session.commit()
         session['user_name'] = user.full_name
@@ -1158,6 +1164,79 @@ def admin_delete_user(user_id):
     db.session.commit()
     flash('Admin user deleted.', 'success')
     return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/customers')
+@admin_required
+def admin_customers():
+    query = request.args.get('q', '').strip()
+    customers_query = User.query.join(Role).filter(Role.name == 'customer')
+    if query:
+        customers_query = customers_query.filter(db.or_(
+            User.full_name.ilike(f'%{query}%'),
+            User.email.ilike(f'%{query}%'),
+            User.phone.ilike(f'%{query}%'),
+        ))
+    customers = customers_query.order_by(User.full_name).all()
+    return render_template(
+        'admin_customers.html',
+        customers=customers,
+        query=query,
+        active_page='customers',
+    )
+
+
+@app.route('/admin/customers/<int:user_id>')
+@admin_required
+def admin_customer_detail(user_id):
+    customer = User.query.join(Role).filter(Role.name == 'customer', User.id == user_id).first_or_404()
+    orders = Order.query.filter_by(customer_name=customer.full_name).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter_by(customer_name=customer.full_name).order_by(Booking.created_at.desc()).all()
+    return render_template(
+        'admin_customer_detail.html',
+        customer=customer,
+        orders=orders,
+        bookings=bookings,
+        active_page='customers',
+    )
+
+
+@app.route('/admin/customers/<int:user_id>/edit', methods=['POST'])
+@admin_required
+def admin_edit_customer(user_id):
+    customer = User.query.join(Role).filter(Role.name == 'customer', User.id == user_id).first_or_404()
+    full_name = request.form.get('full_name', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    phone = request.form.get('phone', '').strip()
+    if not full_name or not email or not phone:
+        flash('Name, email, and phone are required.', 'error')
+        return redirect(url_for('admin_customer_detail', user_id=customer.id))
+    duplicate = User.query.filter(User.email == email, User.id != customer.id).first()
+    if duplicate:
+        flash('That email address is already in use.', 'error')
+        return redirect(url_for('admin_customer_detail', user_id=customer.id))
+    customer.full_name, customer.email, customer.phone = full_name, email, phone
+    profile_record = customer.profile or UserProfile(user_id=customer.id)
+    profile_record.address = request.form.get('address', '').strip()
+    profile_record.city = request.form.get('city', '').strip()
+    profile_record.notes = request.form.get('notes', '').strip()
+    password = request.form.get('password', '')
+    if password:
+        customer.password_hash = generate_password_hash(password)
+    db.session.add(profile_record)
+    db.session.commit()
+    flash('Customer details updated.', 'success')
+    return redirect(url_for('admin_customer_detail', user_id=customer.id))
+
+
+@app.route('/admin/customers/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_customer(user_id):
+    customer = User.query.join(Role).filter(Role.name == 'customer', User.id == user_id).first_or_404()
+    db.session.delete(customer)
+    db.session.commit()
+    flash('Customer deleted.', 'success')
+    return redirect(url_for('admin_customers'))
 
 
 @app.route('/admin/service/<int:service_id>/edit', methods=['POST'])
