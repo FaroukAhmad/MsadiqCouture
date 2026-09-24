@@ -593,6 +593,158 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   margin: 0 auto;
 }
 
+/* Profile page: single centered column (unlike the two-column .auth-card
+   used for login/signup), avatar-first view mode, edit form hidden until
+   "Edit profile" is clicked (see app.js). */
+.profile-card-wrap {
+  display: block;
+  max-width: 480px;
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 4px 22px;
+}
+
+.app-topbar-back,
+.app-topbar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--black-900);
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+  flex-shrink: 0;
+}
+
+.app-topbar-back:hover,
+.app-topbar-logout:hover {
+  color: var(--gold-600);
+}
+
+.app-topbar-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.profile-panel {
+  text-align: center;
+  position: relative;
+  padding-bottom: 70px;
+}
+
+.profile-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.profile-avatar {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--gold-500);
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold-500);
+  color: #fff;
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+
+.info-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--gold-100);
+  color: var(--gold-600);
+  flex-shrink: 0;
+}
+
+.info-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.info-card-label {
+  font-size: 0.78rem;
+  color: var(--neutral-700);
+}
+
+.info-card-value {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.fab-edit {
+  position: fixed;
+  right: 24px;
+  bottom: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gold-500);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(212, 167, 61, 0.45);
+  cursor: pointer;
+  z-index: 50;
+}
+
+.fab-edit:hover {
+  background: var(--gold-600);
+}
+
+.profile-form {
+  text-align: left;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.profile-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.field-hint {
+  font-weight: 400;
+  color: var(--neutral-700);
+  font-size: 0.85em;
+}
+
 .auth-intro {
   text-align: center;
   padding: 1.2rem;
@@ -650,6 +802,57 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   background: rgba(42, 128, 82, 0.08);
   border-color: rgba(42, 128, 82, 0.2);
   color: #1c5a3a;
+}
+
+/* Toast confirmations: fixed to the top of the viewport, auto-dismissed
+   by app.js after 3 seconds (see initToasts()). */
+.toast-wrap {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(92vw, 480px);
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background: #1c5a3a;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  text-align: center;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-12px);
+  animation: toast-in 0.25s ease forwards;
+}
+
+.toast.toast-hide {
+  animation: toast-out 0.25s ease forwards;
+}
+
+.toast-error {
+  background: #7a2121;
+}
+
+.toast-success {
+  background: #1c5a3a;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-12px); }
 }
 
 .admin-dashboard {

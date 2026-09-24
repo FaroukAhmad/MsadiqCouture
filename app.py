@@ -2,6 +2,7 @@ import re
 import hashlib
 import hmac
 import os
+import time
 import secrets
 from functools import wraps
 from pathlib import Path
@@ -17,6 +18,18 @@ from payments import PaystackGateway, PaymentGatewayError
 import image_storage
 
 app = Flask(__name__, static_folder="public/static", static_url_path="/static")
+
+# Cache-busting for CSS/JS: browsers otherwise keep serving an old cached
+# copy of styles.css/app.js after a deploy, even once the server has the
+# new file. VERCEL_GIT_COMMIT_SHA changes on every deploy and is the same
+# across all serverless instances of that deploy; falls back to process
+# start time for local development.
+STATIC_VERSION = os.environ.get("VERCEL_GIT_COMMIT_SHA") or str(int(time.time()))
+
+
+@app.context_processor
+def inject_static_version():
+    return {"static_version": STATIC_VERSION}
 app.config.from_object(Config)
 try:
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ static_version }}" />
   </head>
   <body>
     <header class="site-header">
@@ -47,7 +47,7 @@
     </header>
 
     <main>
-      {% if session.get('user_id') and session.get('role') != 'admin' and request.path != '/dashboard' and not request.path.startswith('/admin') %}
+      {% if session.get('user_id') and session.get('role') != 'admin' and request.path not in ('/dashboard', '/profile') and not request.path.startswith('/admin') %}
         <div class="container dashboard-back-wrap">
           <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Back to customer dashboard" title="Back to dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
         </div>
@@ -57,9 +57,9 @@
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="container flash-wrap">
+        <div class="toast-wrap" role="status" aria-live="polite">
           {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
+            <div class="toast toast-{{ category }}">{{ message }}</div>
           {% endfor %}
         </div>
       {% endif %}
@@ -101,6 +101,6 @@
       </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ static_version }}"></script>
   </body>
 </html>
