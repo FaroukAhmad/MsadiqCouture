@@ -13,6 +13,7 @@
       <a class="{% if active_page == 'booking' %}active{% endif %}" href="{{ url_for('admin_bookings') }}">Booking</a>
       <a class="{% if active_page == 'payments' %}active{% endif %}" href="{{ url_for('admin_payments') }}">Payments</a>
       <a class="{% if active_page == 'orders' %}active{% endif %}" href="{{ url_for('admin_orders') }}">Orders</a>
+      <a class="{% if active_page == 'customers' %}active{% endif %}" href="{{ url_for('admin_customers') }}">Customers</a>
       <a class="{% if active_page == 'admins' %}active{% endif %}" href="{{ url_for('admin_users') }}">Manage admin</a>
     </nav>
   </aside>

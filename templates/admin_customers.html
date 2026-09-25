@@ -1,0 +1,51 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Admin – Customers | Msadiq Couture{% endblock %}
+{% block admin_content %}
+<div class="admin-resource-header">
+  <div>
+    <h1>Customers</h1>
+    <p class="lead">Browse and manage registered customer accounts.</p>
+  </div>
+</div>
+
+<form class="admin-search-row" method="get" action="{{ url_for('admin_customers') }}">
+  <input type="text" name="q" value="{{ query }}" placeholder="Search by name, email or phone…" class="form-input" />
+  <button type="submit" class="btn btn-primary">Search</button>
+  {% if query %}
+    <a href="{{ url_for('admin_customers') }}" class="btn btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+{% if customers %}
+<div class="table-wrapper">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Joined</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ customer.full_name }}</td>
+        <td>{{ customer.email }}</td>
+        <td>{{ customer.phone }}</td>
+        <td>{{ customer.created_at.strftime('%d %b %Y') }}</td>
+        <td>
+          <a href="{{ url_for('admin_customer_detail', user_id=customer.id) }}" class="btn btn-secondary btn-sm">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">No customers found{% if query %} for "<strong>{{ query }}</strong>"{% endif %}.</p>
+{% endif %}
+{% endblock %}
