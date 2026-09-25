@@ -3,12 +3,16 @@
   "builds": [
     {
       "src": "wsgi.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "public/static/**"
+      }
     }
   ],
   "routes": [
     {
-      "handle": "filesystem"
+      "src": "/static/(.*)",
+      "dest": "/public/static/$1"
     },
     {
       "src": "/(.*)",

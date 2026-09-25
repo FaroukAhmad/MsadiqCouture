@@ -17,7 +17,11 @@ from notifications import NotificationService
 from payments import PaystackGateway, PaymentGatewayError
 import image_storage
 
-app = Flask(__name__, static_folder="public/static", static_url_path="/static")
+app = Flask(
+    __name__,
+    static_folder=str(Path(__file__).resolve().parent / "public" / "static"),
+    static_url_path="/static",
+)
 
 # Cache-busting for CSS/JS: browsers otherwise keep serving an old cached
 # copy of styles.css/app.js after a deploy, even once the server has the
