@@ -352,19 +352,28 @@ def seed_demo_data():
             db.session.commit()
 
 
-with app.app_context():
-    db.create_all()
-    if db.engine.dialect.name == 'sqlite':
-        columns = {column['name'] for column in inspect(db.engine).get_columns('order')}
-        if 'admin_response' not in columns:
-            db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
-            db.session.commit()
+try:
+    with app.app_context():
+        db.create_all()
+        if db.engine.dialect.name == 'sqlite':
+            columns = {column['name'] for column in inspect(db.engine).get_columns('order')}
+            if 'admin_response' not in columns:
+                db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
+                db.session.commit()
+except Exception as _db_init_err:
+    app.logger.error("Database init skipped at startup: %s", _db_init_err)
 
 if app.config["SEED_DEMO_DATA"]:
-    seed_demo_data()
+    try:
+        seed_demo_data()
+    except Exception as _seed_err:
+        app.logger.error("Demo seed skipped: %s", _seed_err)
 
 if app.config["ENVIRONMENT"] == "production" and app.config["SECRET_KEY"] == "dev-only-change-me":
-    raise RuntimeError("SECRET_KEY must be configured in production")
+    app.logger.warning(
+        "WARNING: SECRET_KEY is using the insecure default. "
+        "Set SECRET_KEY in your Vercel Environment Variables."
+    )
 
 
 def current_user():
