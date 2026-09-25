@@ -17,9 +17,14 @@ from notifications import NotificationService
 from payments import PaystackGateway, PaymentGatewayError
 import image_storage
 
+_base_dir = Path(__file__).resolve().parent
+_static_dir = _base_dir / "public" / "static"
+if not _static_dir.exists():
+    _static_dir = _base_dir / "static"
+
 app = Flask(
     __name__,
-    static_folder=str(Path(__file__).resolve().parent / "public" / "static"),
+    static_folder=str(_static_dir),
     static_url_path="/static",
 )
 

@@ -5,15 +5,11 @@
       "src": "wsgi.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": "public/static/**"
+        "includeFiles": ["public/**", "static/**"]
       }
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/public/static/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "wsgi.py"
