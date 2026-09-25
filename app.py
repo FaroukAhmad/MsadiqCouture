@@ -356,10 +356,21 @@ try:
     with app.app_context():
         db.create_all()
         if db.engine.dialect.name == 'sqlite':
-            columns = {column['name'] for column in inspect(db.engine).get_columns('order')}
-            if 'admin_response' not in columns:
+            order_cols = {column['name'] for column in inspect(db.engine).get_columns('order')}
+            if 'admin_response' not in order_cols:
                 db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
-                db.session.commit()
+            if 'user_id' not in order_cols:
+                db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN user_id INTEGER'))
+
+            booking_cols = {column['name'] for column in inspect(db.engine).get_columns('booking')}
+            if 'user_id' not in booking_cols:
+                db.session.execute(db.text('ALTER TABLE booking ADD COLUMN user_id INTEGER'))
+
+            meas_cols = {column['name'] for column in inspect(db.engine).get_columns('measurement_request')}
+            if 'user_id' not in meas_cols:
+                db.session.execute(db.text('ALTER TABLE measurement_request ADD COLUMN user_id INTEGER'))
+
+            db.session.commit()
 except Exception as _db_init_err:
     app.logger.error("Database init skipped at startup: %s", _db_init_err)
 
