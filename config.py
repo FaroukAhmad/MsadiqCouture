@@ -50,7 +50,9 @@ def _database_uri():
         # Local development only: make sure the folder for the SQLite file exists.
         (BASE_DIR / "instance").mkdir(exist_ok=True)
         return f"sqlite:///{BASE_DIR / 'instance' / 'msadiq.db'}"
-    return url.replace("postgres://", "postgresql://", 1)
+    return url.replace("postgres://", "postgresql://", 1).replace(
+        "postgresql+psycopg://", "postgresql+psycopg2://", 1
+    )
 
 
 class Config:
