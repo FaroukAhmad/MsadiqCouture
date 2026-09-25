@@ -36,11 +36,17 @@ def _database_uri():
     url = DATABASE_URL
     if not url:
         if ON_VERCEL:
-            raise RuntimeError(
-                "DATABASE_URL is not set. Add a hosted Postgres database "
-                "(e.g. Neon via the Vercel Marketplace) and set DATABASE_URL "
-                "in Project Settings > Environment Variables."
+            # Don't raise here — a RuntimeError at class-definition time
+            # crashes the Vercel cold-start before any request is handled,
+            # producing a 500 with no useful message. Return a placeholder
+            # so the module imports cleanly; every DB-backed route will
+            # still fail with a clear OperationalError that appears in logs.
+            import logging
+            logging.getLogger(__name__).error(
+                "DATABASE_URL is not set on Vercel. "
+                "Add a Postgres database in Project Settings > Environment Variables."
             )
+            return "sqlite:////tmp/msadiq-placeholder.db"
         # Local development only: make sure the folder for the SQLite file exists.
         (BASE_DIR / "instance").mkdir(exist_ok=True)
         return f"sqlite:///{BASE_DIR / 'instance' / 'msadiq.db'}"
