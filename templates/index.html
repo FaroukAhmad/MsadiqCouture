@@ -45,7 +45,7 @@
       <h2>Babbar Riga and Jampa, tailored with a premium finish</h2>
     </div>
     <div class="card-grid">
-      {% for style in styles[:4] %}
+      {% for style in styles %}
         <article class="style-card">
           <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
           <div class="style-body">
@@ -59,6 +59,9 @@
           </div>
         </article>
       {% endfor %}
+    </div>
+    <div class="section-footer-action">
+      <a href="{{ url_for('styles_page') }}" class="btn btn-secondary">View more styles</a>
     </div>
   </div>
 </section>

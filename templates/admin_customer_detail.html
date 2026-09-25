@@ -1,0 +1,82 @@
+{% extends 'admin_layout.html' %}
+{% block title %}{{ customer.full_name }} | Msadiq Couture{% endblock %}
+{% block admin_content %}
+<section class="admin-page-heading"><p class="eyebrow">Operations</p><h1>Customer details</h1><p>View, edit, or remove this customer's account.</p></section>
+<a class="dashboard-back" href="{{ url_for('admin_customers') }}" aria-label="Back to customer list" title="Back to customer list" style="margin-bottom: 20px;"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to customer list</span></a>
+
+{% if request.args.get('edit') %}
+<section class="panel profile-panel">
+  {% set profile = customer.profile %}
+  {% if profile and profile.avatar %}<img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />{% else %}<span class="profile-avatar profile-avatar-placeholder">{{ customer.full_name[:1]|upper }}</span>{% endif %}
+  <h3>Edit customer</h3>
+  <form class="contact-form profile-form" method="post" action="{{ url_for('admin_edit_customer', user_id=customer.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <label>Full name<input name="full_name" value="{{ customer.full_name }}" required /></label>
+    <label>Email<input type="email" name="email" value="{{ customer.email }}" required /></label>
+    <label>Phone<input name="phone" value="{{ customer.phone }}" required /></label>
+    <label>Address<input name="address" value="{{ profile.address if profile else '' }}" /></label>
+    <label>City<input name="city" value="{{ profile.city if profile else '' }}" /></label>
+    <label>Tailoring notes<textarea name="notes" rows="4">{{ profile.notes if profile else '' }}</textarea></label>
+    <label>New password (leave blank to keep current)<input type="password" name="password" minlength="8" /></label>
+    <div class="profile-form-actions">
+      <button class="btn btn-primary" type="submit">Save changes</button>
+      <a class="btn btn-secondary" href="{{ url_for('admin_customer_detail', user_id=customer.id) }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% else %}
+<section class="panel profile-panel profile-view">
+  {% set profile = customer.profile %}
+  {% if profile and profile.avatar %}<img class="profile-avatar" src="{{ profile.avatar }}" alt="Profile photo" />{% else %}<span class="profile-avatar profile-avatar-placeholder">{{ customer.full_name[:1]|upper }}</span>{% endif %}
+  <h3>{{ customer.full_name }}</h3>
+  <dl class="profile-detail-list">
+    <div><dt>Email</dt><dd>{{ customer.email }}</dd></div>
+    <div><dt>Phone</dt><dd>{{ customer.phone }}</dd></div>
+    <div><dt>Address</dt><dd>{{ profile.address if profile and profile.address else '—' }}</dd></div>
+    <div><dt>City</dt><dd>{{ profile.city if profile and profile.city else '—' }}</dd></div>
+    <div><dt>Tailoring notes</dt><dd>{{ profile.notes if profile and profile.notes else '—' }}</dd></div>
+    <div><dt>Customer since</dt><dd>{{ customer.created_at.strftime('%d %b %Y') if customer.created_at else '—' }}</dd></div>
+  </dl>
+  <div class="profile-form-actions">
+    <a class="btn btn-primary" href="{{ url_for('admin_customer_detail', user_id=customer.id, edit=1) }}">Edit customer</a>
+    <form method="post" action="{{ url_for('admin_delete_customer', user_id=customer.id) }}" onsubmit="return confirm('Delete this customer account? This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="btn btn-danger" type="submit">Delete customer</button>
+    </form>
+  </div>
+</section>
+
+<section class="admin-page-grid customer-activity-grid">
+  <div class="panel">
+    <h3>Orders</h3>
+    <ul class="activity-list">
+      {% for order in orders %}
+      <li><strong>{{ order.order_number }} &bull; {{ order.item_name }}</strong><span>{{ order.status }} &bull; &#8358;{{ "{:,.0f}".format(order.total_amount) }}</span></li>
+      {% else %}
+      <li>No orders yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Bookings</h3>
+    <ul class="activity-list">
+      {% for booking in bookings %}
+      <li><strong>{{ booking.service_name }}</strong><span>{{ booking.preferred_date }} at {{ booking.preferred_time }} &bull; {{ booking.status }}</span></li>
+      {% else %}
+      <li>No bookings yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Measurements</h3>
+    <ul class="activity-list">
+      {% for measurement in measurements %}
+      <li><strong>{{ measurement.garment_name }}</strong><span>Chest {{ measurement.chest }} &bull; Waist {{ measurement.waist }} &bull; Hip {{ measurement.hip }} &bull; Sleeve {{ measurement.sleeve }} &bull; {{ measurement.status }}</span></li>
+      {% else %}
+      <li>No measurements submitted yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

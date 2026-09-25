@@ -131,6 +131,7 @@ class Service(db.Model):
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     customer_name = db.Column(db.String(120), nullable=False)
     service_name = db.Column(db.String(160), nullable=False)
     preferred_date = db.Column(db.String(60), nullable=False)
@@ -141,6 +142,7 @@ class Booking(db.Model):
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     order_number = db.Column(db.String(40), unique=True, nullable=False)
     customer_name = db.Column(db.String(160), nullable=False)
     item_name = db.Column(db.String(160), nullable=False)
@@ -174,6 +176,7 @@ class UserProfile(db.Model):
 
 class MeasurementRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     customer_name = db.Column(db.String(160), nullable=False)
     garment_name = db.Column(db.String(160), nullable=False)
     chest = db.Column(db.String(30), nullable=False)
@@ -497,7 +500,7 @@ def dashboard_stats():
 
 @app.route('/')
 def index():
-    featured = Style.query.filter_by(featured=True).order_by(Style.created_at.desc()).all()
+    featured = Style.query.order_by(Style.created_at.desc()).limit(8).all()
     services = Service.query.limit(3).all()
     return render_template('index.html', styles=featured, services=services, stats=dashboard_stats())
 
@@ -557,6 +560,7 @@ def booking_page():
             return redirect(url_for('booking_page'))
 
         booking = Booking(
+            user_id=session.get('user_id'),
             customer_name=customer_name,
             service_name=service_name,
             preferred_date=preferred_date,
@@ -572,11 +576,44 @@ def booking_page():
     return render_template('booking.html', styles=Style.query.limit(5).all(), services=Service.query.all(), selected_style=selected_style)
 
 
+def generate_order_number():
+    while True:
+        candidate = f"TAIL-{datetime.utcnow().year}-{secrets.randbelow(900000) + 100000}"
+        if not Order.query.filter_by(order_number=candidate).first():
+            return candidate
+
+
+@app.route('/orders/create', methods=['POST'])
+@login_required
+def create_order():
+    if not verify_csrf():
+        flash('Your session expired. Please try again.', 'error')
+        return redirect(request.referrer or url_for('styles_page'))
+    user = current_user()
+    style = Style.query.filter_by(slug=request.form.get('style_slug', '').strip()).first()
+    if not style:
+        flash('That style could not be found.', 'error')
+        return redirect(url_for('styles_page'))
+    order = Order(
+        user_id=user.id,
+        order_number=generate_order_number(),
+        customer_name=user.full_name,
+        item_name=style.name,
+        total_amount=style.price,
+        status='Order Received',
+        delivery_status='Pending',
+    )
+    db.session.add(order)
+    db.session.commit()
+    flash(f'Order {order.order_number} placed for {style.name}. Proceed to payment from your dashboard.', 'success')
+    return redirect(url_for('dashboard'))
+
+
 @app.route('/orders')
 @login_required
 def orders_page():
     user = current_user()
-    orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
+    orders = Order.query.filter(db.or_(Order.user_id == user.id, Order.customer_name == user.full_name)).order_by(Order.created_at.desc()).all()
     return render_template('orders.html', orders=orders)
 
 
@@ -664,12 +701,12 @@ def logout():
 @login_required
 def dashboard():
     user = current_user()
-    recent_orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
-    bookings = Booking.query.filter_by(customer_name=user.full_name).order_by(Booking.created_at.desc()).all()
+    recent_orders = Order.query.filter(db.or_(Order.user_id == user.id, Order.customer_name == user.full_name)).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter(db.or_(Booking.user_id == user.id, Booking.customer_name == user.full_name)).order_by(Booking.created_at.desc()).all()
 
     order_numbers = [order.order_number for order in recent_orders]
     payments = Payment.query.filter(Payment.order_number.in_(order_numbers)).order_by(Payment.created_at.desc()).all() if order_numbers else []
-    measurements = MeasurementRequest.query.filter_by(customer_name=user.full_name).order_by(MeasurementRequest.created_at.desc()).all()
+    measurements = MeasurementRequest.query.filter(db.or_(MeasurementRequest.user_id == user.id, MeasurementRequest.customer_name == user.full_name)).order_by(MeasurementRequest.created_at.desc()).all()
 
     return render_template('dashboard.html', user=user, orders=recent_orders, bookings=bookings, payments=payments, measurements=measurements, stats={
         'bookings': len(bookings),
@@ -783,6 +820,7 @@ def measurement_request():
         return redirect(url_for('dashboard'))
 
     measurement = MeasurementRequest(
+        user_id=user.id,
         customer_name=user.full_name,
         garment_name=request.form['garment_name'].strip(),
         chest=request.form['chest'].strip(),
@@ -1203,13 +1241,15 @@ def admin_customers():
 @admin_required
 def admin_customer_detail(user_id):
     customer = User.query.join(Role).filter(Role.name == 'customer', User.id == user_id).first_or_404()
-    orders = Order.query.filter_by(customer_name=customer.full_name).order_by(Order.created_at.desc()).all()
-    bookings = Booking.query.filter_by(customer_name=customer.full_name).order_by(Booking.created_at.desc()).all()
+    orders = Order.query.filter(db.or_(Order.user_id == customer.id, Order.customer_name == customer.full_name)).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter(db.or_(Booking.user_id == customer.id, Booking.customer_name == customer.full_name)).order_by(Booking.created_at.desc()).all()
+    measurements = MeasurementRequest.query.filter(db.or_(MeasurementRequest.user_id == customer.id, MeasurementRequest.customer_name == customer.full_name)).order_by(MeasurementRequest.created_at.desc()).all()
     return render_template(
         'admin_customer_detail.html',
         customer=customer,
         orders=orders,
         bookings=bookings,
+        measurements=measurements,
         active_page='customers',
     )
 

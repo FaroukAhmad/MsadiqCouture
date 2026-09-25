@@ -30,8 +30,12 @@
         <li><strong>Availability:</strong> {{ style.availability }}</li>
       </ul>
       <div class="cta-row product-actions">
-        <a class="btn btn-primary" href="{{ url_for('booking_page', style=style.slug) }}">Book this style</a>
-        <a class="btn btn-secondary" href="{{ url_for('booking_page', style=style.slug) }}">Request customization</a>
+        <form method="post" action="{{ url_for('create_order') }}" class="inline-order-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="style_slug" value="{{ style.slug }}" />
+          <button type="submit" class="btn btn-primary">Order this style</button>
+        </form>
+        <a class="btn btn-secondary" href="{{ url_for('booking_page', style=style.slug) }}">Book a consultation</a>
       </div>
     </div>
   </div>

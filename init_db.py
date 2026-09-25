@@ -24,6 +24,25 @@ def main():
 
     with app.app_context():
         db.create_all()
+        # db.create_all() only creates missing TABLES, not missing columns on
+        # tables that already exist. These three columns were added after the
+        # first deploy, so an existing database needs them added by hand.
+        # "order" and "user" are reserved words in Postgres and must be quoted.
+        # Wrapped in try/except (rather than "IF NOT EXISTS") so this also
+        # works on SQLite, which doesn't support that clause on ADD COLUMN.
+        migrations = [
+            ('order', 'ALTER TABLE "order" ADD COLUMN user_id INTEGER REFERENCES "user"(id)'),
+            ('booking', 'ALTER TABLE booking ADD COLUMN user_id INTEGER REFERENCES "user"(id)'),
+            ('measurement_request', 'ALTER TABLE measurement_request ADD COLUMN user_id INTEGER REFERENCES "user"(id)'),
+        ]
+        for table, statement in migrations:
+            try:
+                db.session.execute(db.text(statement))
+                db.session.commit()
+                print(f"Added user_id column to {table}.")
+            except Exception:
+                db.session.rollback()  # column already exists - fine, nothing to do
+
         for name in ("customer", "staff", "admin"):
             if not Role.query.filter_by(name=name).first():
                 db.session.add(Role(name=name))
