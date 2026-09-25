@@ -1069,10 +1069,12 @@ def admin_create_service():
 @admin_required
 def admin_update_booking_status(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    booking.status = request.form.get('status', booking.status)
+    new_status = request.form.get('status', '').strip()
+    if new_status:
+        booking.status = new_status
     db.session.commit()
     notify_customer(booking.customer_name, 'Msadiq Couture booking update', f'Your {booking.service_name} booking is now {booking.status}.')
-    flash('Booking status updated.', 'success')
+    flash(f'Booking for {booking.customer_name} updated to "{booking.status}".', 'success')
     return redirect(url_for('admin_bookings'))
 
 
@@ -1080,12 +1082,17 @@ def admin_update_booking_status(booking_id):
 @admin_required
 def admin_update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
-    order.status = request.form.get('status', order.status)
-    order.delivery_status = request.form.get('delivery_status', order.delivery_status)
-    order.admin_response = request.form.get('admin_response', order.admin_response).strip()
+    new_status = request.form.get('status', '').strip()
+    if new_status:
+        order.status = new_status
+    delivery_status = request.form.get('delivery_status', '').strip()
+    if delivery_status:
+        order.delivery_status = delivery_status
+    if 'admin_response' in request.form:
+        order.admin_response = request.form.get('admin_response', '').strip()
     db.session.commit()
     notify_customer(order.customer_name, 'Msadiq Couture order update', f'Order {order.order_number}: production status is {order.status}; delivery status is {order.delivery_status}.')
-    flash('Order status updated.', 'success')
+    flash(f'Order {order.order_number} status updated to "{order.status}".', 'success')
     return redirect(url_for('admin_orders'))
 
 

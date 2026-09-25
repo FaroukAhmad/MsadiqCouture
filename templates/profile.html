@@ -71,14 +71,6 @@
           </div>
         </div>
 
-        <div class="info-card">
-          <span class="info-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg></span>
-          <div class="info-card-text">
-            <span class="info-card-label">Tailoring notes</span>
-            <span class="info-card-value">{{ profile.notes or 'Not provided' }}</span>
-          </div>
-        </div>
-
         <button type="button" class="btn btn-primary profile-edit-btn" data-profile-edit>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
           Edit profile
@@ -102,7 +94,6 @@
         <label>Phone<input name="phone" value="{{ user.phone }}" required /></label>
         <label>Address<input name="address" value="{{ profile.address or '' }}" /></label>
         <label>City<input name="city" value="{{ profile.city or '' }}" /></label>
-        <label>Tailoring notes<textarea name="notes" rows="4">{{ profile.notes or '' }}</textarea></label>
         <label>New password <span class="field-hint">(leave blank to keep current)</span><input type="password" name="password" autocomplete="new-password" /></label>
 
         <div class="profile-form-actions">

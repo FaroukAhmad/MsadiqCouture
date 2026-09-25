@@ -1,8 +1,13 @@
 {% extends 'admin_layout.html' %}
 {% block title %}{{ customer.full_name }} | Msadiq Couture{% endblock %}
 {% block admin_content %}
-<section class="admin-page-heading"><p class="eyebrow">Operations</p><h1>Customer details</h1><p>View, edit, or remove this customer's account.</p></section>
-<a class="dashboard-back" href="{{ url_for('admin_customers') }}" aria-label="Back to customer list" title="Back to customer list" style="margin-bottom: 20px;"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to customer list</span></a>
+<section class="admin-page-heading">
+  <p class="eyebrow">Operations</p>
+  <h1>Customer details</h1>
+  <p>View, edit, or manage activity for this customer.</p>
+</section>
+
+<a class="dashboard-back admin-back" href="{{ url_for('admin_customers') }}" aria-label="Back to customer list" title="Back to customer list"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to customer list</span></a>
 
 {% if request.args.get('edit') %}
 <section class="panel profile-panel">
@@ -16,7 +21,6 @@
     <label>Phone<input name="phone" value="{{ customer.phone }}" required /></label>
     <label>Address<input name="address" value="{{ profile.address if profile else '' }}" /></label>
     <label>City<input name="city" value="{{ profile.city if profile else '' }}" /></label>
-    <label>Tailoring notes<textarea name="notes" rows="4">{{ profile.notes if profile else '' }}</textarea></label>
     <label>New password (leave blank to keep current)<input type="password" name="password" minlength="8" /></label>
     <div class="profile-form-actions">
       <button class="btn btn-primary" type="submit">Save changes</button>
@@ -34,7 +38,6 @@
     <div><dt>Phone</dt><dd>{{ customer.phone }}</dd></div>
     <div><dt>Address</dt><dd>{{ profile.address if profile and profile.address else '—' }}</dd></div>
     <div><dt>City</dt><dd>{{ profile.city if profile and profile.city else '—' }}</dd></div>
-    <div><dt>Tailoring notes</dt><dd>{{ profile.notes if profile and profile.notes else '—' }}</dd></div>
     <div><dt>Customer since</dt><dd>{{ customer.created_at.strftime('%d %b %Y') if customer.created_at else '—' }}</dd></div>
   </dl>
   <div class="profile-form-actions">
@@ -46,7 +49,45 @@
   </div>
 </section>
 
-<section class="admin-page-grid customer-activity-grid">
+<section class="panel" style="margin-top: 24px;">
+  <h3>Customer Measurements</h3>
+  {% if measurements %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Garment / Order</th>
+            <th>Chest</th>
+            <th>Waist</th>
+            <th>Hip</th>
+            <th>Sleeve</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in measurements %}
+            <tr>
+              <td>{{ m.created_at.strftime('%d %b %Y') if m.created_at else '—' }}</td>
+              <td><strong>{{ m.garment_name }}</strong></td>
+              <td>{{ m.chest }}</td>
+              <td>{{ m.waist }}</td>
+              <td>{{ m.hip }}</td>
+              <td>{{ m.sleeve }}</td>
+              <td>{{ m.notes or '—' }}</td>
+              <td><span class="status-badge status-{{ m.status | lower }}">{{ m.status }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty-state">No measurements submitted yet.</p>
+  {% endif %}
+</section>
+
+<section class="admin-page-grid customer-activity-grid" style="margin-top: 24px;">
   <div class="panel">
     <h3>Orders</h3>
     <ul class="activity-list">
@@ -64,16 +105,6 @@
       <li><strong>{{ booking.service_name }}</strong><span>{{ booking.preferred_date }} at {{ booking.preferred_time }} &bull; {{ booking.status }}</span></li>
       {% else %}
       <li>No bookings yet.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="panel">
-    <h3>Measurements</h3>
-    <ul class="activity-list">
-      {% for measurement in measurements %}
-      <li><strong>{{ measurement.garment_name }}</strong><span>Chest {{ measurement.chest }} &bull; Waist {{ measurement.waist }} &bull; Hip {{ measurement.hip }} &bull; Sleeve {{ measurement.sleeve }} &bull; {{ measurement.status }}</span></li>
-      {% else %}
-      <li>No measurements submitted yet.</li>
       {% endfor %}
     </ul>
   </div>

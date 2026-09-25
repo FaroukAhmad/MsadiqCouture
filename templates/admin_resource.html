@@ -1,18 +1,327 @@
 {% extends 'admin_layout.html' %}
 {% block title %}{{ title }} | Msadiq Couture{% endblock %}
 {% block admin_content %}
-<section class="admin-page-heading"><p class="eyebrow">Operations</p><h1>{{ title }}</h1><p>{{ description }}</p></section>
+<section class="admin-page-heading">
+  <p class="eyebrow">Operations</p>
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+</section>
+
 {% if page == 'styles' %}
-<section class="admin-page-grid"><div class="panel"><h3>Add style</h3><form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_style') }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><label>Style name<input name="name" required /></label><label>Slug<input name="slug" /></label><label>Category<select name="category_id">{% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}</select></label><label>Gender<select name="gender"><option>Women</option><option>Men</option><option>Unisex</option></select></label><label>Price<input type="number" name="price" value="150000" /></label><label>Lead time<input name="lead_time" value="10-14 days" /></label><label>Availability<input name="availability" value="Made to order" /></label><label>Colors<input name="colors" value="Gold|Ivory" /></label><label>Fabric<input name="fabrics" value="Premium cotton|Silk blend" /></label><label>Image<input type="url" name="image_main" /></label><label>Upload image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label><label>Description<textarea name="description" rows="3"></textarea></label><label><input type="checkbox" name="featured" checked /> Featured</label><button class="btn btn-primary" type="submit">Add style</button></form></div><div class="panel"><h3>Current styles</h3><ul class="activity-list admin-edit-list">{% for style in styles %}<li><details class="admin-edit-item"><summary><img class="admin-edit-thumb" src="{{ style.image_main }}" alt="" /><span><strong>{{ style.name }}</strong><span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} • {{ style.category }}</span></span></summary><form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_style', style_id=style.id) }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><input type="hidden" name="style_full_edit" value="1" /><label>Style name<input name="name" value="{{ style.name }}" required /></label><label>Slug<input name="slug" value="{{ style.slug }}" /></label><label>Category<select name="category_id">{% for category in categories %}<option value="{{ category.id }}" {% if category.id == style.category_id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label><label>Gender<select name="gender">{% for g in ['Women', 'Men', 'Unisex'] %}<option {% if g == style.gender %}selected{% endif %}>{{ g }}</option>{% endfor %}</select></label><label>Price<input type="number" name="price" value="{{ style.price }}" /></label><label>Lead time<input name="lead_time" value="{{ style.lead_time }}" /></label><label>Availability<input name="availability" value="{{ style.availability }}" /></label><label>Colors<input name="colors" value="{{ style.colors }}" /></label><label>Fabric<input name="fabrics" value="{{ style.fabrics }}" /></label><label>Image URL<input type="url" name="image_main" value="{{ style.image_main }}" /></label><label>Upload new image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label><label>Description<textarea name="description" rows="3">{{ style.description }}</textarea></label><label><input type="checkbox" name="featured" {% if style.featured %}checked{% endif %} /> Featured</label><label><input type="checkbox" name="new_arrival" {% if style.new_arrival %}checked{% endif %} /> New arrival</label><div class="admin-edit-actions"><button class="btn btn-primary btn-small">Save changes</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_style', style_id=style.id) }}" formnovalidate>Delete</button></div></form></details></li>{% endfor %}</ul></div></section>
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>Add style</h3>
+    <form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_style') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Style name<input name="name" placeholder="e.g. Royal Kaftan" required /></label>
+      <label>Slug<input name="slug" placeholder="e.g. royal-kaftan" /></label>
+      <label>Category
+        <select name="category_id">
+          {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Gender
+        <select name="gender">
+          <option>Women</option>
+          <option>Men</option>
+          <option>Unisex</option>
+        </select>
+      </label>
+      <label>Price<input type="number" name="price" value="150000" required /></label>
+      <label>Lead time<input name="lead_time" value="10-14 days" /></label>
+      <label>Availability<input name="availability" value="Made to order" /></label>
+      <label>Colors<input name="colors" value="Gold|Ivory" /></label>
+      <label>Fabric<input name="fabrics" value="Premium cotton|Silk blend" /></label>
+      <label>Image URL<input type="url" name="image_main" placeholder="https://..." /></label>
+      <label>Upload image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
+      <label>Description<textarea name="description" rows="3"></textarea></label>
+      <label><input type="checkbox" name="featured" checked /> Featured style</label>
+      <div class="admin-action-row">
+        <button class="btn btn-primary" type="submit">Add style</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Current styles</h3>
+    <ul class="activity-list admin-edit-list">
+      {% for style in styles %}
+        <li>
+          <details class="admin-edit-item">
+            <summary>
+              <img class="admin-edit-thumb" src="{{ style.image_main }}" alt="" />
+              <span>
+                <strong>{{ style.name }}</strong>
+                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} &bull; {{ style.category }}</span>
+              </span>
+            </summary>
+            <form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_style', style_id=style.id) }}" enctype="multipart/form-data">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="style_full_edit" value="1" />
+              <label>Style name<input name="name" value="{{ style.name }}" required /></label>
+              <label>Slug<input name="slug" value="{{ style.slug }}" /></label>
+              <label>Category
+                <select name="category_id">
+                  {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id == style.category_id %}selected{% endif %}>{{ category.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Gender
+                <select name="gender">
+                  {% for g in ['Women', 'Men', 'Unisex'] %}
+                    <option {% if g == style.gender %}selected{% endif %}>{{ g }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Price<input type="number" name="price" value="{{ style.price }}" /></label>
+              <label>Lead time<input name="lead_time" value="{{ style.lead_time }}" /></label>
+              <label>Availability<input name="availability" value="{{ style.availability }}" /></label>
+              <label>Colors<input name="colors" value="{{ style.colors }}" /></label>
+              <label>Fabric<input name="fabrics" value="{{ style.fabrics }}" /></label>
+              <label>Image URL<input type="url" name="image_main" value="{{ style.image_main }}" /></label>
+              <label>Upload new image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
+              <label>Description<textarea name="description" rows="3">{{ style.description }}</textarea></label>
+              <label><input type="checkbox" name="featured" {% if style.featured %}checked{% endif %} /> Featured</label>
+              <label><input type="checkbox" name="new_arrival" {% if style.new_arrival %}checked{% endif %} /> New arrival</label>
+              <div class="admin-edit-actions">
+                <button class="btn btn-primary btn-small" type="submit">Save changes</button>
+                <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_style', style_id=style.id) }}" formnovalidate onclick="return confirm('Delete style?');">Delete</button>
+              </div>
+            </form>
+          </details>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
 {% elif page == 'services' %}
-<section class="admin-page-grid"><div class="panel"><h3>Add service</h3><form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_service') }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><label>Service name<input name="name" required /></label><label>Price<input type="number" name="price" value="50000" /></label><label>Duration<input name="duration" value="7-10 days" /></label><label>Status<select name="status"><option>Available</option><option>Popular</option><option>Limited</option></select></label><label>Image URL<input type="url" name="image" /></label><label>Upload image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label><label>Description<textarea name="description" rows="4"></textarea></label><button class="btn btn-primary">Add service</button></form></div><div class="panel"><h3>Current services</h3><ul class="activity-list admin-edit-list">{% for service in services %}<li><details class="admin-edit-item"><summary><img class="admin-edit-thumb" src="{{ service.image }}" alt="" /><span><strong>{{ service.name }}</strong><span class="admin-edit-meta">₦{{ "{:,.0f}".format(service.price) }} • {{ service.status }}</span></span></summary><form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_service', service_id=service.id) }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><label>Service name<input name="name" value="{{ service.name }}" required /></label><label>Price<input type="number" name="price" value="{{ service.price }}" /></label><label>Duration<input name="duration" value="{{ service.duration }}" /></label><label>Status<select name="status">{% for s in ['Available', 'Popular', 'Limited'] %}<option {% if s == service.status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label><label>Image URL<input type="url" name="image" value="{{ service.image }}" /></label><label>Upload new image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label><label>Description<textarea name="description" rows="3">{{ service.description }}</textarea></label><div class="admin-edit-actions"><button class="btn btn-primary btn-small">Save changes</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_service', service_id=service.id) }}" formnovalidate>Delete</button></div></form></details></li>{% endfor %}</ul></div></section>
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>Add service</h3>
+    <form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_service') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Service name<input name="name" required /></label>
+      <label>Price<input type="number" name="price" value="50000" required /></label>
+      <label>Duration<input name="duration" value="7-10 days" /></label>
+      <label>Status
+        <select name="status">
+          <option>Available</option>
+          <option>Popular</option>
+          <option>Limited</option>
+        </select>
+      </label>
+      <label>Image URL<input type="url" name="image" /></label>
+      <label>Upload image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
+      <label>Description<textarea name="description" rows="4"></textarea></label>
+      <div class="admin-action-row">
+        <button class="btn btn-primary" type="submit">Add service</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Current services</h3>
+    <ul class="activity-list admin-edit-list">
+      {% for service in services %}
+        <li>
+          <details class="admin-edit-item">
+            <summary>
+              <img class="admin-edit-thumb" src="{{ service.image }}" alt="" />
+              <span>
+                <strong>{{ service.name }}</strong>
+                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(service.price) }} &bull; {{ service.status }}</span>
+              </span>
+            </summary>
+            <form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_service', service_id=service.id) }}" enctype="multipart/form-data">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <label>Service name<input name="name" value="{{ service.name }}" required /></label>
+              <label>Price<input type="number" name="price" value="{{ service.price }}" /></label>
+              <label>Duration<input name="duration" value="{{ service.duration }}" /></label>
+              <label>Status
+                <select name="status">
+                  {% for s in ['Available', 'Popular', 'Limited'] %}
+                    <option {% if s == service.status %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Image URL<input type="url" name="image" value="{{ service.image }}" /></label>
+              <label>Upload new image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
+              <label>Description<textarea name="description" rows="3">{{ service.description }}</textarea></label>
+              <div class="admin-edit-actions">
+                <button class="btn btn-primary btn-small" type="submit">Save changes</button>
+                <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_service', service_id=service.id) }}" formnovalidate onclick="return confirm('Delete service?');">Delete</button>
+              </div>
+            </form>
+          </details>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
 {% elif page == 'orders' %}
-<section class="panel"><h3>Customer orders</h3><ul class="activity-list">{% for order in orders %}<li><strong>{{ order.order_number }} • {{ order.item_name }}</strong><span>{{ order.customer_name }} • ₦{{ "{:,.0f}".format(order.total_amount) }}</span><form class="contact-form" method="post" action="{{ url_for('admin_update_order_status', order_id=order.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><select name="status"><option>Order Received</option><option>Approved</option><option>Rejected</option><option>Measurement Confirmed</option><option>Payment Confirmed</option><option>Completed</option></select><select name="delivery_status"><option>Pending</option><option>Fabric Confirmed</option><option>In Production</option><option>Ready for Collection</option></select><textarea name="admin_response" rows="2" placeholder="Response to customer">{{ order.admin_response or '' }}</textarea><button class="btn btn-primary btn-small">Approve / respond</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_order', order_id=order.id) }}">Delete</button></form></li>{% else %}<li>No orders found.</li>{% endfor %}</ul></section>
+<section class="panel">
+  <h3>Customer orders</h3>
+  <ul class="activity-list">
+    {% for order in orders %}
+      <li class="admin-order-item">
+        <div class="admin-order-header">
+          <strong>{{ order.order_number }} &bull; {{ order.item_name }}</strong>
+          <span>Customer: <strong>{{ order.customer_name }}</strong> &bull; Amount: <strong>₦{{ "{:,.0f}".format(order.total_amount) }}</strong></span>
+          <span class="status-badge status-{{ order.status | lower | replace(' ', '-') }}">Status: {{ order.status }} &bull; Delivery: {{ order.delivery_status }}</span>
+        </div>
+        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_order_status', order_id=order.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <div class="admin-form-row">
+            <label>Order status
+              <select name="status">
+                {% for st in ['Order Received', 'Approved', 'Rejected', 'Measurement Confirmed', 'Payment Confirmed', 'Completed'] %}
+                  <option value="{{ st }}" {% if order.status == st %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Delivery status
+              <select name="delivery_status">
+                {% for ds in ['Pending', 'Fabric Confirmed', 'In Production', 'Ready for Collection', 'Delivered'] %}
+                  <option value="{{ ds }}" {% if order.delivery_status == ds %}selected{% endif %}>{{ ds }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>Admin note / response to customer
+            <textarea name="admin_response" rows="2" placeholder="Note to customer...">{{ order.admin_response or '' }}</textarea>
+          </label>
+          <div class="admin-action-row">
+            <button class="btn btn-success btn-small" type="submit" name="status" value="Approved">Approve</button>
+            <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
+            <button class="btn btn-primary btn-small" type="submit">Update status</button>
+            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_order', order_id=order.id) }}" formnovalidate onclick="return confirm('Delete this order?');">Delete</button>
+          </div>
+        </form>
+      </li>
+    {% else %}
+      <li>No orders found.</li>
+    {% endfor %}
+  </ul>
+</section>
+
 {% elif page == 'booking' %}
-<section class="panel"><h3>Booking requests</h3><ul class="activity-list">{% for booking in bookings %}<li><strong>{{ booking.customer_name }} • {{ booking.service_name }}</strong><span>{{ booking.preferred_date }} at {{ booking.preferred_time }}</span><form method="post" action="{{ url_for('admin_update_booking_status', booking_id=booking.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><select name="status"><option>Pending</option><option>Confirmed</option><option>Rejected</option><option>Completed</option></select><button class="btn btn-primary btn-small">Accept / reject</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_booking', booking_id=booking.id) }}">Delete</button></form></li>{% else %}<li>No booking requests found.</li>{% endfor %}</ul></section>
+<section class="panel">
+  <h3>Booking requests</h3>
+  <ul class="activity-list">
+    {% for booking in bookings %}
+      <li class="admin-order-item">
+        <div class="admin-order-header">
+          <strong>{{ booking.customer_name }} &bull; {{ booking.service_name }}</strong>
+          <span>Preferred date: <strong>{{ booking.preferred_date }} at {{ booking.preferred_time }}</strong></span>
+          <span class="status-badge status-{{ booking.status | lower }}">Status: {{ booking.status }}</span>
+        </div>
+        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_booking_status', booking_id=booking.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <label>Booking status
+            <select name="status">
+              {% for bs in ['Pending', 'Confirmed', 'Rejected', 'Completed'] %}
+                <option value="{{ bs }}" {% if booking.status == bs %}selected{% endif %}>{{ bs }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="admin-action-row">
+            <button class="btn btn-success btn-small" type="submit" name="status" value="Confirmed">Approve</button>
+            <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
+            <button class="btn btn-primary btn-small" type="submit">Update status</button>
+            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_booking', booking_id=booking.id) }}" formnovalidate onclick="return confirm('Delete booking request?');">Delete</button>
+          </div>
+        </form>
+      </li>
+    {% else %}
+      <li>No booking requests found.</li>
+    {% endfor %}
+  </ul>
+</section>
+
 {% elif page == 'payments' %}
-<section class="panel"><h3>Payment records</h3><ul class="activity-list">{% for payment in payments %}<li><strong>{{ payment.order_number }} • {{ payment.transaction_reference }}</strong><span>₦{{ "{:,.0f}".format(payment.amount) }} via {{ payment.gateway }}</span><form method="post" action="{{ url_for('admin_update_payment_status', payment_id=payment.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><select name="status"><option>Pending</option><option>Partially Paid</option><option>Successful</option><option>Failed</option></select><button class="btn btn-primary btn-small">Update payment</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_payment', payment_id=payment.id) }}">Delete</button></form></li>{% endfor %}</ul></section>
+<section class="panel">
+  <h3>Payment records</h3>
+  <ul class="activity-list">
+    {% for payment in payments %}
+      <li class="admin-order-item">
+        <div class="admin-order-header">
+          <strong>{{ payment.order_number }} &bull; Ref: {{ payment.transaction_reference }}</strong>
+          <span>Amount: <strong>₦{{ "{:,.0f}".format(payment.amount) }}</strong> via {{ payment.gateway }}</span>
+          <span class="status-badge status-{{ payment.status | lower }}">Status: {{ payment.status }}</span>
+        </div>
+        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_payment_status', payment_id=payment.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <label>Payment status
+            <select name="status">
+              {% for ps in ['Pending', 'Partially Paid', 'Successful', 'Failed'] %}
+                <option value="{{ ps }}" {% if payment.status == ps %}selected{% endif %}>{{ ps }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="admin-action-row">
+            <button class="btn btn-primary btn-small" type="submit">Update status</button>
+            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_payment', payment_id=payment.id) }}" formnovalidate onclick="return confirm('Delete payment record?');">Delete</button>
+          </div>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
 {% elif page == 'admins' %}
-<section class="admin-page-grid"><div class="panel"><h3>Create admin</h3><form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_user') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><label>Full name<input name="full_name" required /></label><label>Email<input type="email" name="email" required /></label><label>Phone<input name="phone" required /></label><label>Password<input type="password" name="password" minlength="8" required /></label><label>Role<select name="role"><option value="admin">Admin</option><option value="staff">Staff</option></select></label><button class="btn btn-primary">Create admin</button></form></div><div class="panel"><h3>Admin accounts</h3><ul class="activity-list">{% for admin_user in admin_users %}<li><strong>{{ admin_user.full_name }}</strong><span>{{ admin_user.email }} • {{ admin_user.phone }}</span><form method="post" action="{{ url_for('admin_edit_user', user_id=admin_user.id) }}" class="inline-admin-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /><input name="full_name" value="{{ admin_user.full_name }}" required /><input name="phone" value="{{ admin_user.phone }}" required /><select name="role"><option value="admin">Admin</option><option value="staff">Staff</option></select><input type="password" name="password" placeholder="New password" /><button class="btn btn-secondary btn-small">Save</button><button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_user', user_id=admin_user.id) }}">Delete</button></form></li>{% endfor %}</ul></div></section>
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>Create admin</h3>
+    <form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_user') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Full name<input name="full_name" required /></label>
+      <label>Email<input type="email" name="email" required /></label>
+      <label>Phone<input name="phone" required /></label>
+      <label>Password<input type="password" name="password" minlength="8" required /></label>
+      <label>Role
+        <select name="role">
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+        </select>
+      </label>
+      <div class="admin-action-row">
+        <button class="btn btn-primary" type="submit">Create admin</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Admin accounts</h3>
+    <ul class="activity-list">
+      {% for admin_user in admin_users %}
+        <li>
+          <strong>{{ admin_user.full_name }}</strong>
+          <span>{{ admin_user.email }} &bull; {{ admin_user.phone }}</span>
+          <form method="post" action="{{ url_for('admin_edit_user', user_id=admin_user.id) }}" class="contact-form admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <label>Full name<input name="full_name" value="{{ admin_user.full_name }}" required /></label>
+            <label>Phone<input name="phone" value="{{ admin_user.phone }}" required /></label>
+            <label>Role
+              <select name="role">
+                <option value="admin" {% if admin_user.role_ref.name == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="staff" {% if admin_user.role_ref.name == 'staff' %}selected{% endif %}>Staff</option>
+              </select>
+            </label>
+            <label>New password<input type="password" name="password" placeholder="Leave blank to keep current" /></label>
+            <div class="admin-action-row">
+              <button class="btn btn-secondary btn-small" type="submit">Save</button>
+              <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_user', user_id=admin_user.id) }}" formnovalidate onclick="return confirm('Delete admin account?');">Delete</button>
+            </div>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
 {% endif %}
 {% endblock %}

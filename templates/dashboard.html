@@ -95,12 +95,33 @@
         {% endfor %}
       </ul>
       {% if measurements %}
-        <h3 class="panel-subheading">Measurement requests</h3>
-        <ul class="activity-list">
-          {% for measurement in measurements %}
-            <li><strong>{{ measurement.garment_name }}</strong><span>{{ measurement.chest }} chest • {{ measurement.waist }} waist</span><small>{{ measurement.status }}</small></li>
-          {% endfor %}
-        </ul>
+        <h3 class="panel-subheading" style="margin-top: 24px;">Measurement Requests</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Garment</th>
+                <th>Chest</th>
+                <th>Waist</th>
+                <th>Hip</th>
+                <th>Sleeve</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for measurement in measurements %}
+                <tr>
+                  <td><strong>{{ measurement.garment_name }}</strong></td>
+                  <td>{{ measurement.chest }}</td>
+                  <td>{{ measurement.waist }}</td>
+                  <td>{{ measurement.hip }}</td>
+                  <td>{{ measurement.sleeve }}</td>
+                  <td><span class="status-badge status-{{ measurement.status | lower }}">{{ measurement.status }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% endif %}
     </div>
   </div>

@@ -573,19 +573,102 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   display: inline-flex;
   margin: 0;
 }
+
+.contact-form, .auth-form, .admin-form, .profile-form, .booking-form {
   display: grid;
   gap: 16px;
+  width: 100%;
 }
 
 .contact-form[hidden], .auth-form[hidden] {
   display: none;
 }
 
-.contact-form label, .auth-form label {
+.contact-form label, .auth-form label, .admin-form label, .profile-form label {
   display: grid;
   gap: 8px;
   color: var(--neutral-700);
   font-weight: 600;
+  width: 100%;
+}
+
+.admin-action-row, .profile-form-actions, .admin-edit-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.btn-success {
+  background: #1c5a3a;
+  border-color: #15452d;
+  color: #ffffff;
+}
+.btn-success:hover {
+  background: #15452d;
+}
+
+.btn-warning {
+  background: #c25e00;
+  border-color: #a34e00;
+  color: #ffffff;
+}
+.btn-warning:hover {
+  background: #a34e00;
+}
+
+.admin-order-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(212, 167, 61, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.admin-order-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(18,18,18,0.06);
+}
+
+.admin-status-form {
+  display: grid;
+  gap: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(212,167,61,0.15);
+  color: var(--gold-600);
+  width: fit-content;
+}
+.status-badge.status-approved, .status-badge.status-confirmed, .status-badge.status-successful, .status-badge.status-completed {
+  background: rgba(42,128,82,0.12);
+  color: #1c5a3a;
+}
+.status-badge.status-rejected, .status-badge.status-failed {
+  background: rgba(190,54,54,0.12);
+  color: #7a2121;
+}
+.status-badge.status-pending {
+  background: rgba(212,167,61,0.15);
+  color: var(--gold-600);
 }
 
 .auth-section {
