@@ -1,44 +1,59 @@
 {% extends 'admin_layout.html' %}
 {% block title %}Admin – Customers | Msadiq Couture{% endblock %}
 {% block admin_content %}
-<div class="admin-resource-header">
-  <div>
-    <h1>Customers</h1>
-    <p class="lead">Browse and manage registered customer accounts.</p>
-  </div>
-</div>
+<section class="admin-page-heading">
+  <p class="eyebrow">Operations</p>
+  <h1>Customers</h1>
+  <p class="lead">Browse and manage registered customer accounts.</p>
+</section>
 
-<form class="admin-search-row" method="get" action="{{ url_for('admin_customers') }}">
-  <input type="text" name="q" value="{{ query }}" placeholder="Search by name, email or phone…" class="form-input" />
-  <button type="submit" class="btn btn-primary">Search</button>
+<form class="admin-toolbar" method="get" action="{{ url_for('admin_customers') }}" style="margin-bottom: 24px;">
+  <label class="toolbar-search">Search customer
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name, email or phone…" />
+  </label>
+  <button type="submit" class="btn btn-primary btn-small">Search</button>
   {% if query %}
-    <a href="{{ url_for('admin_customers') }}" class="btn btn-secondary">Clear</a>
+    <a href="{{ url_for('admin_customers') }}" class="btn btn-secondary btn-small">Clear</a>
   {% endif %}
 </form>
 
 {% if customers %}
-<div class="table-wrapper">
-  <table class="admin-table">
+<div class="table-wrap">
+  <table class="data-table">
     <thead>
       <tr>
         <th>#</th>
-        <th>Name</th>
+        <th>Customer</th>
         <th>Email</th>
         <th>Phone</th>
+        <th>City</th>
         <th>Joined</th>
-        <th>Actions</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody>
       {% for customer in customers %}
+      {% set profile = customer.profile %}
       <tr>
         <td>{{ loop.index }}</td>
-        <td>{{ customer.full_name }}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            {% if profile and profile.avatar %}
+              <img src="{{ profile.avatar }}" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold-500);" />
+            {% else %}
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--gold-500); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;">
+                {{ customer.full_name[:1]|upper }}
+              </div>
+            {% endif %}
+            <strong>{{ customer.full_name }}</strong>
+          </div>
+        </td>
         <td>{{ customer.email }}</td>
         <td>{{ customer.phone }}</td>
-        <td>{{ customer.created_at.strftime('%d %b %Y') }}</td>
+        <td>{{ profile.city if profile and profile.city else '—' }}</td>
+        <td>{{ customer.created_at.strftime('%d %b %Y') if customer.created_at else '—' }}</td>
         <td>
-          <a href="{{ url_for('admin_customer_detail', user_id=customer.id) }}" class="btn btn-secondary btn-sm">View</a>
+          <a href="{{ url_for('admin_customer_detail', user_id=customer.id) }}" class="btn btn-secondary btn-small">View details</a>
         </td>
       </tr>
       {% endfor %}
