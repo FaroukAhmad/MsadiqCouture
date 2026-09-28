@@ -927,6 +927,30 @@ def admin():
 
 
 def render_admin_resource(page, title, description):
+    query = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all').strip()
+
+    bookings_q = Booking.query
+    if query:
+        bookings_q = bookings_q.filter(db.or_(Booking.customer_name.ilike(f'%{query}%'), Booking.service_name.ilike(f'%{query}%')))
+    if status_filter != 'all':
+        bookings_q = bookings_q.filter_by(status=status_filter)
+    bookings = bookings_q.order_by(Booking.created_at.desc()).all()
+
+    orders_q = Order.query
+    if query:
+        orders_q = orders_q.filter(db.or_(Order.order_number.ilike(f'%{query}%'), Order.customer_name.ilike(f'%{query}%'), Order.item_name.ilike(f'%{query}%')))
+    if status_filter != 'all':
+        orders_q = orders_q.filter_by(status=status_filter)
+    orders = orders_q.order_by(Order.created_at.desc()).all()
+
+    payments_q = Payment.query
+    if query:
+        payments_q = payments_q.filter(db.or_(Payment.order_number.ilike(f'%{query}%'), Payment.transaction_reference.ilike(f'%{query}%')))
+    if status_filter != 'all':
+        payments_q = payments_q.filter_by(status=status_filter)
+    payments = payments_q.order_by(Payment.created_at.desc()).all()
+
     context = {
         'page': page,
         'title': title,
@@ -934,11 +958,13 @@ def render_admin_resource(page, title, description):
         'categories': Category.query.order_by(Category.name).all(),
         'styles': Style.query.order_by(Style.created_at.desc()).all(),
         'services': Service.query.order_by(Service.created_at.desc()).all(),
-        'bookings': Booking.query.order_by(Booking.created_at.desc()).all(),
-        'orders': Order.query.order_by(Order.created_at.desc()).all(),
-        'payments': Payment.query.order_by(Payment.created_at.desc()).all(),
+        'bookings': bookings,
+        'orders': orders,
+        'payments': payments,
         'admin_users': User.query.join(Role).filter(Role.name.in_(['admin', 'staff'])).order_by(User.full_name).all(),
         'active_page': page,
+        'query': query,
+        'filter_status': status_filter,
     }
     return render_template('admin_resource.html', **context)
 

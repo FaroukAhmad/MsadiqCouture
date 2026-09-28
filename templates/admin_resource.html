@@ -164,113 +164,238 @@
 </section>
 
 {% elif page == 'orders' %}
+<section class="panel" style="margin-bottom: 24px;">
+  <form class="admin-toolbar" method="get" action="{{ url_for('admin_orders') }}">
+    <label class="toolbar-search">Search orders
+      <input type="text" name="q" value="{{ query }}" placeholder="Search by order #, customer, item..." />
+    </label>
+    <label>Filter by status
+      <select name="status">
+        <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="Order Received" {% if filter_status == 'Order Received' %}selected{% endif %}>Order Received</option>
+        <option value="Approved" {% if filter_status == 'Approved' %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if filter_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+        <option value="Measurement Confirmed" {% if filter_status == 'Measurement Confirmed' %}selected{% endif %}>Measurement Confirmed</option>
+        <option value="Payment Confirmed" {% if filter_status == 'Payment Confirmed' %}selected{% endif %}>Payment Confirmed</option>
+        <option value="Completed" {% if filter_status == 'Completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </label>
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary btn-small">Apply Filter</button>
+      {% if query or filter_status != 'all' %}
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary btn-small">Reset</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
 <section class="panel">
-  <h3>Customer orders</h3>
-  <ul class="activity-list">
-    {% for order in orders %}
-      <li class="admin-order-item">
-        <div class="admin-order-header">
-          <strong>{{ order.order_number }} &bull; {{ order.item_name }}</strong>
-          <span>Customer: <strong>{{ order.customer_name }}</strong> &bull; Amount: <strong>₦{{ "{:,.0f}".format(order.total_amount) }}</strong></span>
-          <span class="status-badge status-{{ order.status | lower | replace(' ', '-') }}">Status: {{ order.status }} &bull; Delivery: {{ order.delivery_status }}</span>
-        </div>
-        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_order_status', order_id=order.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <div class="admin-form-row">
-            <label>Order status
-              <select name="status">
-                {% for st in ['Order Received', 'Approved', 'Rejected', 'Measurement Confirmed', 'Payment Confirmed', 'Completed'] %}
-                  <option value="{{ st }}" {% if order.status == st %}selected{% endif %}>{{ st }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <label>Delivery status
-              <select name="delivery_status">
-                {% for ds in ['Pending', 'Fabric Confirmed', 'In Production', 'Ready for Collection', 'Delivered'] %}
-                  <option value="{{ ds }}" {% if order.delivery_status == ds %}selected{% endif %}>{{ ds }}</option>
-                {% endfor %}
-              </select>
-            </label>
-          </div>
-          <label>Admin note / response to customer
-            <textarea name="admin_response" rows="2" placeholder="Note to customer...">{{ order.admin_response or '' }}</textarea>
-          </label>
-          <div class="admin-action-row">
-            <button class="btn btn-success btn-small" type="submit" name="status" value="Approved">Approve</button>
-            <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
-            <button class="btn btn-primary btn-small" type="submit">Update status</button>
-            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_order', order_id=order.id) }}" formnovalidate onclick="return confirm('Delete this order?');">Delete</button>
-          </div>
-        </form>
-      </li>
-    {% else %}
-      <li>No orders found.</li>
-    {% endfor %}
-  </ul>
+  <h3>Order History Table</h3>
+  {% if orders %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Garment / Item</th>
+            <th>Total Amount</th>
+            <th>Date</th>
+            <th>Order Status</th>
+            <th>Delivery Status</th>
+            <th>Action & Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td><strong>{{ order.order_number }}</strong></td>
+              <td>{{ order.customer_name }}</td>
+              <td>{{ order.item_name }}</td>
+              <td>₦{{ "{:,.0f}".format(order.total_amount) }}</td>
+              <td>{{ order.created_at.strftime('%d %b %Y') if order.created_at else '—' }}</td>
+              <td>
+                <span class="status-badge status-{{ order.status | lower | replace(' ', '-') }}">
+                  {{ order.status }}
+                </span>
+              </td>
+              <td>{{ order.delivery_status }}</td>
+              <td style="min-width: 260px;">
+                <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_order_status', order_id=order.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <select name="status" style="font-size: 0.85rem; padding: 4px 8px; margin-bottom: 4px;">
+                    {% for st in ['Order Received', 'Approved', 'Rejected', 'Measurement Confirmed', 'Payment Confirmed', 'Completed'] %}
+                      <option value="{{ st }}" {% if order.status == st %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                  </select>
+                  <select name="delivery_status" style="font-size: 0.85rem; padding: 4px 8px; margin-bottom: 4px;">
+                    {% for ds in ['Pending', 'Fabric Confirmed', 'In Production', 'Ready for Collection', 'Delivered'] %}
+                      <option value="{{ ds }}" {% if order.delivery_status == ds %}selected{% endif %}>{{ ds }}</option>
+                    {% endfor %}
+                  </select>
+                  <textarea name="admin_response" rows="1" placeholder="Note to customer..." style="font-size: 0.85rem; padding: 4px;">{{ order.admin_response or '' }}</textarea>
+                  <div class="admin-action-row" style="margin-top: 6px;">
+                    <button class="btn btn-success btn-small" type="submit" name="status" value="Approved">Approve</button>
+                    <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
+                    <button class="btn btn-primary btn-small" type="submit">Save</button>
+                    <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_order', order_id=order.id) }}" formnovalidate onclick="return confirm('Delete this order?');">Delete</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty-state">No orders found.</p>
+  {% endif %}
 </section>
 
 {% elif page == 'booking' %}
+<section class="panel" style="margin-bottom: 24px;">
+  <form class="admin-toolbar" method="get" action="{{ url_for('admin_bookings') }}">
+    <label class="toolbar-search">Search bookings
+      <input type="text" name="q" value="{{ query }}" placeholder="Search by customer or service name..." />
+    </label>
+    <label>Filter by status
+      <select name="status">
+        <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="Pending" {% if filter_status == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Confirmed" {% if filter_status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+        <option value="Rejected" {% if filter_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+        <option value="Completed" {% if filter_status == 'Completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </label>
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary btn-small">Apply Filter</button>
+      {% if query or filter_status != 'all' %}
+        <a href="{{ url_for('admin_bookings') }}" class="btn btn-secondary btn-small">Reset</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
 <section class="panel">
-  <h3>Booking requests</h3>
-  <ul class="activity-list">
-    {% for booking in bookings %}
-      <li class="admin-order-item">
-        <div class="admin-order-header">
-          <strong>{{ booking.customer_name }} &bull; {{ booking.service_name }}</strong>
-          <span>Preferred date: <strong>{{ booking.preferred_date }} at {{ booking.preferred_time }}</strong></span>
-          <span class="status-badge status-{{ booking.status | lower }}">Status: {{ booking.status }}</span>
-        </div>
-        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_booking_status', booking_id=booking.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <label>Booking status
-            <select name="status">
-              {% for bs in ['Pending', 'Confirmed', 'Rejected', 'Completed'] %}
-                <option value="{{ bs }}" {% if booking.status == bs %}selected{% endif %}>{{ bs }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <div class="admin-action-row">
-            <button class="btn btn-success btn-small" type="submit" name="status" value="Confirmed">Approve</button>
-            <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
-            <button class="btn btn-primary btn-small" type="submit">Update status</button>
-            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_booking', booking_id=booking.id) }}" formnovalidate onclick="return confirm('Delete booking request?');">Delete</button>
-          </div>
-        </form>
-      </li>
-    {% else %}
-      <li>No booking requests found.</li>
-    {% endfor %}
-  </ul>
+  <h3>Booking History Table</h3>
+  {% if bookings %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Service</th>
+            <th>Preferred Date & Time</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+            <tr>
+              <td><strong>{{ booking.customer_name }}</strong></td>
+              <td>{{ booking.service_name }}</td>
+              <td>{{ booking.preferred_date }} at {{ booking.preferred_time }}</td>
+              <td>{{ booking.created_at.strftime('%d %b %Y') if booking.created_at else '—' }}</td>
+              <td><span class="status-badge status-{{ booking.status | lower }}">{{ booking.status }}</span></td>
+              <td style="min-width: 220px;">
+                <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_booking_status', booking_id=booking.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <select name="status" style="font-size: 0.85rem; padding: 4px 8px; margin-bottom: 4px;">
+                    {% for bs in ['Pending', 'Confirmed', 'Rejected', 'Completed'] %}
+                      <option value="{{ bs }}" {% if booking.status == bs %}selected{% endif %}>{{ bs }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="admin-action-row" style="margin-top: 6px;">
+                    <button class="btn btn-success btn-small" type="submit" name="status" value="Confirmed">Approve</button>
+                    <button class="btn btn-warning btn-small" type="submit" name="status" value="Rejected">Reject</button>
+                    <button class="btn btn-primary btn-small" type="submit">Save</button>
+                    <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_booking', booking_id=booking.id) }}" formnovalidate onclick="return confirm('Delete booking?');">Delete</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty-state">No booking requests found.</p>
+  {% endif %}
 </section>
 
 {% elif page == 'payments' %}
+<section class="panel" style="margin-bottom: 24px;">
+  <form class="admin-toolbar" method="get" action="{{ url_for('admin_payments') }}">
+    <label class="toolbar-search">Search payments
+      <input type="text" name="q" value="{{ query }}" placeholder="Search by order # or transaction ref..." />
+    </label>
+    <label>Filter by status
+      <select name="status">
+        <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="Pending" {% if filter_status == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Partially Paid" {% if filter_status == 'Partially Paid' %}selected{% endif %}>Partially Paid</option>
+        <option value="Successful" {% if filter_status == 'Successful' %}selected{% endif %}>Successful</option>
+        <option value="Failed" {% if filter_status == 'Failed' %}selected{% endif %}>Failed</option>
+      </select>
+    </label>
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary btn-small">Apply Filter</button>
+      {% if query or filter_status != 'all' %}
+        <a href="{{ url_for('admin_payments') }}" class="btn btn-secondary btn-small">Reset</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
 <section class="panel">
-  <h3>Payment records</h3>
-  <ul class="activity-list">
-    {% for payment in payments %}
-      <li class="admin-order-item">
-        <div class="admin-order-header">
-          <strong>{{ payment.order_number }} &bull; Ref: {{ payment.transaction_reference }}</strong>
-          <span>Amount: <strong>₦{{ "{:,.0f}".format(payment.amount) }}</strong> via {{ payment.gateway }}</span>
-          <span class="status-badge status-{{ payment.status | lower }}">Status: {{ payment.status }}</span>
-        </div>
-        <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_payment_status', payment_id=payment.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <label>Payment status
-            <select name="status">
-              {% for ps in ['Pending', 'Partially Paid', 'Successful', 'Failed'] %}
-                <option value="{{ ps }}" {% if payment.status == ps %}selected{% endif %}>{{ ps }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <div class="admin-action-row">
-            <button class="btn btn-primary btn-small" type="submit">Update status</button>
-            <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_payment', payment_id=payment.id) }}" formnovalidate onclick="return confirm('Delete payment record?');">Delete</button>
-          </div>
-        </form>
-      </li>
-    {% endfor %}
-  </ul>
+  <h3>Payment History Table</h3>
+  {% if payments %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Transaction Ref</th>
+            <th>Amount</th>
+            <th>Gateway</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+            <tr>
+              <td><strong>{{ payment.order_number }}</strong></td>
+              <td>{{ payment.transaction_reference }}</td>
+              <td>₦{{ "{:,.0f}".format(payment.amount) }}</td>
+              <td>{{ payment.gateway }}</td>
+              <td>{{ payment.created_at.strftime('%d %b %Y') if payment.created_at else '—' }}</td>
+              <td><span class="status-badge status-{{ payment.status | lower }}">{{ payment.status }}</span></td>
+              <td style="min-width: 180px;">
+                <form class="contact-form admin-status-form" method="post" action="{{ url_for('admin_update_payment_status', payment_id=payment.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <select name="status" style="font-size: 0.85rem; padding: 4px 8px; margin-bottom: 4px;">
+                    {% for ps in ['Pending', 'Partially Paid', 'Successful', 'Failed'] %}
+                      <option value="{{ ps }}" {% if payment.status == ps %}selected{% endif %}>{{ ps }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="admin-action-row" style="margin-top: 6px;">
+                    <button class="btn btn-primary btn-small" type="submit">Save</button>
+                    <button class="btn btn-danger btn-small" formaction="{{ url_for('admin_delete_payment', payment_id=payment.id) }}" formnovalidate onclick="return confirm('Delete payment record?');">Delete</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty-state">No payment records found.</p>
+  {% endif %}
 </section>
 
 {% elif page == 'admins' %}

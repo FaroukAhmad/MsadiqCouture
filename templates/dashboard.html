@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard | Msadiq Couture{% endblock %}
 {% block content %}
-<section class="page-hero small-hero">
-  <div class="container">
-    <p class="eyebrow">My account</p>
+<section class="page-hero small-hero text-center" style="text-align: center;">
+  <div class="container" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <p class="eyebrow customer-account-eyebrow">My account</p>
     <h1>Welcome back, {{ user.full_name }}</h1>
-    <p class="dashboard-intro">Manage your tailoring appointments, measurements, payments, and production updates.</p>
+    <p class="dashboard-intro" style="text-align: center; margin: 8px auto 0;">Manage your tailoring appointments, measurements, payments, and production updates.</p>
   </div>
 </section>
 

@@ -31,7 +31,7 @@
         {% endif %}
         <div class="nav-actions">
           {% if session.get('user_id') %}
-            {% if session.get('role') != 'admin' %}
+            {% if session.get('role') != 'admin' and request.path != '/' %}
             <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Dashboard</a>
             {% endif %}
             <a class="btn btn-secondary" href="{{ url_for('profile') }}">Profile</a>
@@ -39,7 +39,7 @@
           {% else %}
             <a class="btn btn-secondary" href="{{ url_for('login') }}">Login</a>
           {% endif %}
-          {% if not request.path.startswith('/admin') %}
+          {% if not request.path.startswith('/admin') and session.get('role') != 'admin' %}
           <a class="btn btn-primary header-booking" href="{{ url_for('booking_page') }}">Book a Tailor</a>
           {% endif %}
         </div>
@@ -47,9 +47,9 @@
     </header>
 
     <main>
-      {% if session.get('user_id') and session.get('role') != 'admin' and request.path not in ('/dashboard', '/profile') and not request.path.startswith('/admin') %}
+      {% if session.get('user_id') and session.get('role') != 'admin' and request.path not in ('/', '/dashboard', '/profile') and not request.path.startswith('/admin') %}
         <div class="container dashboard-back-wrap">
-          <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Back to customer dashboard" title="Back to dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
+          <a class="dashboard-back" href="{{ url_for('dashboard') }}" aria-label="Dashboard" title="Dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Dashboard</span></a>
         </div>
       {% endif %}
       {% block content %}{% endblock %}
