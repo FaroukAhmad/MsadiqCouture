@@ -1,0 +1,40 @@
+{% extends 'customer_layout.html' %}
+{% set active_page = 'measurements' %}
+{% block title %}Measurements | Msadiq Couture{% endblock %}
+{% block customer_content %}
+<section class="admin-page-heading">
+  <p class="eyebrow">Fit profile</p>
+  <h1>Your measurements</h1>
+  <p>Submit measurements for a garment or order, and track their review status here.</p>
+</section>
+
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>Submit measurements</h3>
+    <form class="contact-form admin-form" method="post" action="{{ url_for('measurement_request') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Garment or order<input type="text" name="garment_name" placeholder="Royal Kaftan Set" required /></label>
+      <label>Chest<input type="text" name="chest" placeholder="38 in" required /></label>
+      <label>Waist<input type="text" name="waist" placeholder="32 in" required /></label>
+      <label>Hip<input type="text" name="hip" placeholder="40 in" required /></label>
+      <label>Sleeve<input type="text" name="sleeve" placeholder="24 in" required /></label>
+      <label>Notes<textarea name="notes" rows="3" placeholder="Fit preferences or special instructions"></textarea></label>
+      <button class="btn btn-primary" type="submit">Send measurements</button>
+    </form>
+  </div>
+  <div class="panel">
+    <h3>Measurement history</h3>
+    <ul class="activity-list dashboard-list">
+      {% for measurement in measurements %}
+        <li>
+          <strong>{{ measurement.garment_name }}</strong>
+          <span>Chest {{ measurement.chest }} &bull; Waist {{ measurement.waist }} &bull; Hip {{ measurement.hip }} &bull; Sleeve {{ measurement.sleeve }}</span>
+          <small>{{ measurement.status }}</small>
+        </li>
+      {% else %}
+        <li><span>No measurements submitted yet.</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

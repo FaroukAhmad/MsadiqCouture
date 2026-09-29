@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-shell">
+  <aside class="admin-sidebar" aria-label="Customer account">
+    <div class="admin-sidebar-header">
+      <p class="eyebrow">My account</p>
+      <h2>{{ user.full_name.split(' ')[0] if user else 'Account' }}</h2>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a class="{% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('dashboard') }}">Overview</a>
+      <a class="{% if active_page == 'orders' %}active{% endif %}" href="{{ url_for('orders_page') }}">Orders</a>
+      <a class="{% if active_page == 'bookings' %}active{% endif %}" href="{{ url_for('booking_page') }}">Bookings</a>
+      <a class="{% if active_page == 'measurements' %}active{% endif %}" href="{{ url_for('measurement_request') }}">Measurements</a>
+    </nav>
+    <a class="admin-sidebar-action" href="{{ url_for('profile') }}">My profile</a>
+  </aside>
+  <main class="admin-page-content">
+    {% if active_page != 'overview' %}
+      <a class="dashboard-back admin-back" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
+    {% endif %}
+    {% block customer_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

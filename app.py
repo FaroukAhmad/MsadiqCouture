@@ -17,16 +17,7 @@ from notifications import NotificationService
 from payments import PaystackGateway, PaymentGatewayError
 import image_storage
 
-_base_dir = Path(__file__).resolve().parent
-_static_dir = _base_dir / "public" / "static"
-if not _static_dir.exists():
-    _static_dir = _base_dir / "static"
-
-app = Flask(
-    __name__,
-    static_folder=str(_static_dir),
-    static_url_path="/static",
-)
+app = Flask(__name__, static_folder="public/static", static_url_path="/static")
 
 # Cache-busting for CSS/JS: browsers otherwise keep serving an old cached
 # copy of styles.css/app.js after a deploy, even once the server has the
@@ -140,7 +131,6 @@ class Service(db.Model):
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     customer_name = db.Column(db.String(120), nullable=False)
     service_name = db.Column(db.String(160), nullable=False)
     preferred_date = db.Column(db.String(60), nullable=False)
@@ -151,7 +141,6 @@ class Booking(db.Model):
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     order_number = db.Column(db.String(40), unique=True, nullable=False)
     customer_name = db.Column(db.String(160), nullable=False)
     item_name = db.Column(db.String(160), nullable=False)
@@ -185,7 +174,6 @@ class UserProfile(db.Model):
 
 class MeasurementRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     customer_name = db.Column(db.String(160), nullable=False)
     garment_name = db.Column(db.String(160), nullable=False)
     chest = db.Column(db.String(30), nullable=False)
@@ -361,39 +349,19 @@ def seed_demo_data():
             db.session.commit()
 
 
-try:
-    with app.app_context():
-        db.create_all()
-        if db.engine.dialect.name == 'sqlite':
-            order_cols = {column['name'] for column in inspect(db.engine).get_columns('order')}
-            if 'admin_response' not in order_cols:
-                db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
-            if 'user_id' not in order_cols:
-                db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN user_id INTEGER'))
-
-            booking_cols = {column['name'] for column in inspect(db.engine).get_columns('booking')}
-            if 'user_id' not in booking_cols:
-                db.session.execute(db.text('ALTER TABLE booking ADD COLUMN user_id INTEGER'))
-
-            meas_cols = {column['name'] for column in inspect(db.engine).get_columns('measurement_request')}
-            if 'user_id' not in meas_cols:
-                db.session.execute(db.text('ALTER TABLE measurement_request ADD COLUMN user_id INTEGER'))
-
+with app.app_context():
+    db.create_all()
+    if db.engine.dialect.name == 'sqlite':
+        columns = {column['name'] for column in inspect(db.engine).get_columns('order')}
+        if 'admin_response' not in columns:
+            db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
             db.session.commit()
-except Exception as _db_init_err:
-    app.logger.error("Database init skipped at startup: %s", _db_init_err)
 
 if app.config["SEED_DEMO_DATA"]:
-    try:
-        seed_demo_data()
-    except Exception as _seed_err:
-        app.logger.error("Demo seed skipped: %s", _seed_err)
+    seed_demo_data()
 
 if app.config["ENVIRONMENT"] == "production" and app.config["SECRET_KEY"] == "dev-only-change-me":
-    app.logger.warning(
-        "WARNING: SECRET_KEY is using the insecure default. "
-        "Set SECRET_KEY in your Vercel Environment Variables."
-    )
+    raise RuntimeError("SECRET_KEY must be configured in production")
 
 
 def current_user():
@@ -589,7 +557,6 @@ def booking_page():
             return redirect(url_for('booking_page'))
 
         booking = Booking(
-            user_id=session.get('user_id'),
             customer_name=customer_name,
             service_name=service_name,
             preferred_date=preferred_date,
@@ -599,10 +566,12 @@ def booking_page():
         db.session.add(booking)
         db.session.commit()
         flash('Booking submitted successfully. Our team will confirm your appointment.', 'success')
-        return redirect(url_for('orders_page'))
+        return redirect(url_for('booking_page'))
 
     selected_style = request.args.get('style', '').strip()
-    return render_template('booking.html', styles=Style.query.limit(5).all(), services=Service.query.all(), selected_style=selected_style)
+    user = current_user()
+    bookings = Booking.query.filter_by(customer_name=user.full_name).order_by(Booking.created_at.desc()).all()
+    return render_template('booking.html', styles=Style.query.limit(5).all(), services=Service.query.all(), selected_style=selected_style, user=user, bookings=bookings)
 
 
 def generate_order_number():
@@ -624,7 +593,6 @@ def create_order():
         flash('That style could not be found.', 'error')
         return redirect(url_for('styles_page'))
     order = Order(
-        user_id=user.id,
         order_number=generate_order_number(),
         customer_name=user.full_name,
         item_name=style.name,
@@ -642,8 +610,8 @@ def create_order():
 @login_required
 def orders_page():
     user = current_user()
-    orders = Order.query.filter(db.or_(Order.user_id == user.id, Order.customer_name == user.full_name)).order_by(Order.created_at.desc()).all()
-    return render_template('orders.html', orders=orders)
+    orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
+    return render_template('orders.html', orders=orders, user=user)
 
 
 @app.route('/about')
@@ -730,12 +698,12 @@ def logout():
 @login_required
 def dashboard():
     user = current_user()
-    recent_orders = Order.query.filter(db.or_(Order.user_id == user.id, Order.customer_name == user.full_name)).order_by(Order.created_at.desc()).all()
-    bookings = Booking.query.filter(db.or_(Booking.user_id == user.id, Booking.customer_name == user.full_name)).order_by(Booking.created_at.desc()).all()
+    recent_orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter_by(customer_name=user.full_name).order_by(Booking.created_at.desc()).all()
 
     order_numbers = [order.order_number for order in recent_orders]
     payments = Payment.query.filter(Payment.order_number.in_(order_numbers)).order_by(Payment.created_at.desc()).all() if order_numbers else []
-    measurements = MeasurementRequest.query.filter(db.or_(MeasurementRequest.user_id == user.id, MeasurementRequest.customer_name == user.full_name)).order_by(MeasurementRequest.created_at.desc()).all()
+    measurements = MeasurementRequest.query.filter_by(customer_name=user.full_name).order_by(MeasurementRequest.created_at.desc()).all()
 
     return render_template('dashboard.html', user=user, orders=recent_orders, bookings=bookings, payments=payments, measurements=measurements, stats={
         'bookings': len(bookings),
@@ -840,16 +808,20 @@ def paystack_webhook():
     return jsonify({'received': True})
 
 
-@app.route('/measurements', methods=['POST'])
+@app.route('/measurements', methods=['GET', 'POST'])
+@login_required
 def measurement_request():
     user = current_user()
+    if request.method == 'GET':
+        measurements = MeasurementRequest.query.filter_by(customer_name=user.full_name).order_by(MeasurementRequest.created_at.desc()).all()
+        return render_template('measurements.html', user=user, measurements=measurements)
+
     required_fields = ['garment_name', 'chest', 'waist', 'hip', 'sleeve']
     if not all(request.form.get(field, '').strip() for field in required_fields):
         flash('Please complete all measurement fields.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('measurement_request'))
 
     measurement = MeasurementRequest(
-        user_id=user.id,
         customer_name=user.full_name,
         garment_name=request.form['garment_name'].strip(),
         chest=request.form['chest'].strip(),
@@ -869,7 +841,7 @@ def measurement_request():
     except Exception:
         app.logger.exception('Measurement notification failed')
     flash('Measurement request submitted for review.', 'success')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('measurement_request'))
 
 
 @app.route('/admin')
@@ -927,30 +899,6 @@ def admin():
 
 
 def render_admin_resource(page, title, description):
-    query = request.args.get('q', '').strip()
-    status_filter = request.args.get('status', 'all').strip()
-
-    bookings_q = Booking.query
-    if query:
-        bookings_q = bookings_q.filter(db.or_(Booking.customer_name.ilike(f'%{query}%'), Booking.service_name.ilike(f'%{query}%')))
-    if status_filter != 'all':
-        bookings_q = bookings_q.filter_by(status=status_filter)
-    bookings = bookings_q.order_by(Booking.created_at.desc()).all()
-
-    orders_q = Order.query
-    if query:
-        orders_q = orders_q.filter(db.or_(Order.order_number.ilike(f'%{query}%'), Order.customer_name.ilike(f'%{query}%'), Order.item_name.ilike(f'%{query}%')))
-    if status_filter != 'all':
-        orders_q = orders_q.filter_by(status=status_filter)
-    orders = orders_q.order_by(Order.created_at.desc()).all()
-
-    payments_q = Payment.query
-    if query:
-        payments_q = payments_q.filter(db.or_(Payment.order_number.ilike(f'%{query}%'), Payment.transaction_reference.ilike(f'%{query}%')))
-    if status_filter != 'all':
-        payments_q = payments_q.filter_by(status=status_filter)
-    payments = payments_q.order_by(Payment.created_at.desc()).all()
-
     context = {
         'page': page,
         'title': title,
@@ -958,13 +906,11 @@ def render_admin_resource(page, title, description):
         'categories': Category.query.order_by(Category.name).all(),
         'styles': Style.query.order_by(Style.created_at.desc()).all(),
         'services': Service.query.order_by(Service.created_at.desc()).all(),
-        'bookings': bookings,
-        'orders': orders,
-        'payments': payments,
+        'bookings': Booking.query.order_by(Booking.created_at.desc()).all(),
+        'orders': Order.query.order_by(Order.created_at.desc()).all(),
+        'payments': Payment.query.order_by(Payment.created_at.desc()).all(),
         'admin_users': User.query.join(Role).filter(Role.name.in_(['admin', 'staff'])).order_by(User.full_name).all(),
         'active_page': page,
-        'query': query,
-        'filter_status': status_filter,
     }
     return render_template('admin_resource.html', **context)
 
@@ -1095,12 +1041,10 @@ def admin_create_service():
 @admin_required
 def admin_update_booking_status(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    new_status = request.form.get('status', '').strip()
-    if new_status:
-        booking.status = new_status
+    booking.status = request.form.get('status', booking.status)
     db.session.commit()
     notify_customer(booking.customer_name, 'Msadiq Couture booking update', f'Your {booking.service_name} booking is now {booking.status}.')
-    flash(f'Booking for {booking.customer_name} updated to "{booking.status}".', 'success')
+    flash('Booking status updated.', 'success')
     return redirect(url_for('admin_bookings'))
 
 
@@ -1108,17 +1052,12 @@ def admin_update_booking_status(booking_id):
 @admin_required
 def admin_update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
-    new_status = request.form.get('status', '').strip()
-    if new_status:
-        order.status = new_status
-    delivery_status = request.form.get('delivery_status', '').strip()
-    if delivery_status:
-        order.delivery_status = delivery_status
-    if 'admin_response' in request.form:
-        order.admin_response = request.form.get('admin_response', '').strip()
+    order.status = request.form.get('status', order.status)
+    order.delivery_status = request.form.get('delivery_status', order.delivery_status)
+    order.admin_response = request.form.get('admin_response', order.admin_response).strip()
     db.session.commit()
     notify_customer(order.customer_name, 'Msadiq Couture order update', f'Order {order.order_number}: production status is {order.status}; delivery status is {order.delivery_status}.')
-    flash(f'Order {order.order_number} status updated to "{order.status}".', 'success')
+    flash('Order status updated.', 'success')
     return redirect(url_for('admin_orders'))
 
 
@@ -1303,9 +1242,9 @@ def admin_customers():
 @admin_required
 def admin_customer_detail(user_id):
     customer = User.query.join(Role).filter(Role.name == 'customer', User.id == user_id).first_or_404()
-    orders = Order.query.filter(db.or_(Order.user_id == customer.id, Order.customer_name == customer.full_name)).order_by(Order.created_at.desc()).all()
-    bookings = Booking.query.filter(db.or_(Booking.user_id == customer.id, Booking.customer_name == customer.full_name)).order_by(Booking.created_at.desc()).all()
-    measurements = MeasurementRequest.query.filter(db.or_(MeasurementRequest.user_id == customer.id, MeasurementRequest.customer_name == customer.full_name)).order_by(MeasurementRequest.created_at.desc()).all()
+    orders = Order.query.filter_by(customer_name=customer.full_name).order_by(Order.created_at.desc()).all()
+    bookings = Booking.query.filter_by(customer_name=customer.full_name).order_by(Booking.created_at.desc()).all()
+    measurements = MeasurementRequest.query.filter_by(customer_name=customer.full_name).order_by(MeasurementRequest.created_at.desc()).all()
     return render_template(
         'admin_customer_detail.html',
         customer=customer,
