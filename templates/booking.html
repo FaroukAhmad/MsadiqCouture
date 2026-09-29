@@ -5,10 +5,10 @@
 <section class="admin-page-heading">
   <p class="eyebrow">Booking</p>
   <h1>Schedule your tailoring appointment</h1>
-  <p>Book a consultation and track your appointment history below.</p>
+  <p>Book a consultation and track your appointment status below.</p>
 </section>
 
-<section class="admin-page-grid">
+<section class="admin-page-grid customer-activity-grid">
   <div class="panel">
     <h3>New appointment</h3>
     <form class="contact-form admin-form" method="post" action="{{ url_for('booking_page') }}">
@@ -45,16 +45,30 @@
     </form>
   </div>
   <div class="panel">
-    <h3>Your booking history</h3>
+    <h3>Pending bookings</h3>
     <ul class="activity-list dashboard-list">
-      {% for booking in bookings %}
+      {% for booking in pending_bookings %}
         <li>
           <strong>{{ booking.service_name }}</strong>
           <span>{{ booking.preferred_date }} at {{ booking.preferred_time }}</span>
           <small class="booking-status booking-status-{{ booking.status|lower|replace(' ', '-') }}">{{ booking.status }}</small>
         </li>
       {% else %}
-        <li><span>No booking requests yet.</span></li>
+        <li><span>No pending booking requests.</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Booking history</h3>
+    <ul class="activity-list dashboard-list">
+      {% for booking in history_bookings %}
+        <li>
+          <strong>{{ booking.service_name }}</strong>
+          <span>{{ booking.preferred_date }} at {{ booking.preferred_time }}</span>
+          <small class="booking-status booking-status-{{ booking.status|lower|replace(' ', '-') }}">{{ booking.status }}</small>
+        </li>
+      {% else %}
+        <li><span>No confirmed or rejected bookings yet.</span></li>
       {% endfor %}
     </ul>
   </div>

@@ -571,7 +571,9 @@ def booking_page():
     selected_style = request.args.get('style', '').strip()
     user = current_user()
     bookings = Booking.query.filter_by(customer_name=user.full_name).order_by(Booking.created_at.desc()).all()
-    return render_template('booking.html', styles=Style.query.limit(5).all(), services=Service.query.all(), selected_style=selected_style, user=user, bookings=bookings)
+    pending_bookings = [b for b in bookings if b.status == 'Pending']
+    history_bookings = [b for b in bookings if b.status != 'Pending']
+    return render_template('booking.html', styles=Style.query.limit(5).all(), services=Service.query.all(), selected_style=selected_style, user=user, pending_bookings=pending_bookings, history_bookings=history_bookings)
 
 
 def generate_order_number():
@@ -611,7 +613,9 @@ def create_order():
 def orders_page():
     user = current_user()
     orders = Order.query.filter_by(customer_name=user.full_name).order_by(Order.created_at.desc()).all()
-    return render_template('orders.html', orders=orders, user=user)
+    pending_orders = [o for o in orders if o.status == 'Order Received']
+    history_orders = [o for o in orders if o.status != 'Order Received']
+    return render_template('orders.html', pending_orders=pending_orders, history_orders=history_orders, user=user)
 
 
 @app.route('/about')
