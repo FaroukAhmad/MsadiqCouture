@@ -1,28 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}About Us | Msadiq Couture{% endblock %}
 {% block content %}
-<section class="page-hero small-hero">
-  <div class="container narrow-copy">
+<section class="section about-section">
+  <div class="container about-copy">
+    <img class="about-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="Msadiq Couture logo" />
     <p class="eyebrow">About</p>
-    <h1>Designed with heritage, tailored for present life.</h1>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container two-column">
-    <div>
-      <p>Msadiq Couture brings together premium tailoring, cultural identity, and contemporary fashion. Our atelier blends rich craftsmanship with precise fit, creating garments that feel personal, polished, and enduring.</p>
-      <p>We serve modern clients seeking occasion wear, bridal couture, corporate wear, and thoughtfully customized outfits for life’s important moments.</p>
-    </div>
-    <div class="feature-box">
-      <h3>Our promise</h3>
-      <ul class="checks">
-        <li>Design-led tailoring</li>
-        <li>Premium fabric curation</li>
-        <li>Measured fit quality</li>
-        <li>Client-first communication</li>
-      </ul>
-    </div>
+    <p>At M.Sadiq Couture Fashion, we believe that fashion is more than what you wear. It is a form of self-expression &mdash; a reflection of personality, identity, culture, and style.</p>
+    <p>From the initial idea to the final fitting, we approach every creation with creativity, precision, and dedication to quality. Our goal is to transform ideas into beautifully finished outfits that our clients can wear with confidence.</p>
+    <p>As we continue to grow, we are also developing our Fashion Academy, which will provide aspiring fashion designers and creatives with practical knowledge, technical skills, and the foundation needed to pursue opportunities within the fashion industry.</p>
+    <p>We are committed to building a fashion brand that represents creativity, craftsmanship, quality, and Nigerian excellence &mdash; from Kano to the world.</p>
   </div>
 </section>
 {% endblock %}
