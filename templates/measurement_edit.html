@@ -1,0 +1,29 @@
+{% extends 'customer_layout.html' %}
+{% set active_page = 'measurements' %}
+{% block title %}Edit Measurement | Msadiq Couture{% endblock %}
+{% block customer_content %}
+<section class="admin-page-heading">
+  <p class="eyebrow">Fit profile</p>
+  <h1>Edit measurement</h1>
+  <p>Update your details below and resubmit for review.</p>
+</section>
+
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>{{ measurement.garment_name }}</h3>
+    <form class="contact-form admin-form" method="post" action="{{ url_for('edit_measurement', measurement_id=measurement.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Garment or order<input type="text" name="garment_name" value="{{ measurement.garment_name }}" required /></label>
+      <label>Chest<input type="text" name="chest" value="{{ measurement.chest }}" required /></label>
+      <label>Waist<input type="text" name="waist" value="{{ measurement.waist }}" required /></label>
+      <label>Hip<input type="text" name="hip" value="{{ measurement.hip }}" required /></label>
+      <label>Sleeve<input type="text" name="sleeve" value="{{ measurement.sleeve }}" required /></label>
+      <label>Notes<textarea name="notes" rows="3">{{ measurement.notes }}</textarea></label>
+      <div class="profile-form-actions">
+        <button type="submit" class="btn btn-primary">Save &amp; resubmit</button>
+        <a class="btn btn-secondary" href="{{ url_for('measurement_request') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

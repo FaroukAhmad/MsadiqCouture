@@ -608,6 +608,19 @@ def create_order():
     return redirect(url_for('dashboard'))
 
 
+@app.route('/payments')
+@login_required
+def customer_payments():
+    user = current_user()
+    orders = Order.query.filter_by(customer_name=user.full_name).all()
+    order_numbers = [o.order_number for o in orders]
+    payments = Payment.query.filter(Payment.order_number.in_(order_numbers)).order_by(Payment.created_at.desc()).all() if order_numbers else []
+    pending_payments = [p for p in payments if p.status not in ('Successful', 'Completed')]
+    payment_history = [p for p in payments if p.status in ('Successful', 'Completed')]
+    orders_by_number = {o.order_number: o for o in orders}
+    return render_template('payments.html', pending_payments=pending_payments, payment_history=payment_history, orders_by_number=orders_by_number, user=user)
+
+
 @app.route('/orders')
 @login_required
 def orders_page():
@@ -845,6 +858,32 @@ def measurement_request():
     except Exception:
         app.logger.exception('Measurement notification failed')
     flash('Measurement request submitted for review.', 'success')
+    return redirect(url_for('measurement_request'))
+
+
+@app.route('/measurements/<int:measurement_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_measurement(measurement_id):
+    user = current_user()
+    measurement = MeasurementRequest.query.filter_by(id=measurement_id, customer_name=user.full_name).first_or_404()
+
+    if request.method == 'GET':
+        return render_template('measurement_edit.html', user=user, measurement=measurement)
+
+    required_fields = ['garment_name', 'chest', 'waist', 'hip', 'sleeve']
+    if not all(request.form.get(field, '').strip() for field in required_fields):
+        flash('Please complete all measurement fields.', 'error')
+        return redirect(url_for('edit_measurement', measurement_id=measurement.id))
+
+    measurement.garment_name = request.form['garment_name'].strip()
+    measurement.chest = request.form['chest'].strip()
+    measurement.waist = request.form['waist'].strip()
+    measurement.hip = request.form['hip'].strip()
+    measurement.sleeve = request.form['sleeve'].strip()
+    measurement.notes = request.form.get('notes', '').strip()
+    measurement.status = 'Submitted'  # resubmitting puts it back in the review queue
+    db.session.commit()
+    flash('Measurement updated and resubmitted for review.', 'success')
     return redirect(url_for('measurement_request'))
 
 

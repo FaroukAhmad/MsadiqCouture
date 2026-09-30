@@ -2,17 +2,23 @@
 {% block content %}
 <div class="admin-shell">
   <aside class="admin-sidebar" aria-label="Customer account">
-    <div class="admin-sidebar-header">
+    <div class="admin-sidebar-header customer-sidebar-header">
       <p class="eyebrow">My account</p>
-      <h2>{{ user.full_name.split(' ')[0] if user else 'Account' }}</h2>
+      {% if user and user.profile and user.profile.avatar %}
+        <img class="sidebar-avatar" src="{{ user.profile.avatar }}" alt="Profile photo" />
+      {% else %}
+        <div class="sidebar-avatar sidebar-avatar-placeholder" aria-hidden="true">{{ (user.full_name[:1] | upper) if user else '?' }}</div>
+      {% endif %}
     </div>
     <nav class="admin-sidebar-nav">
       <a class="{% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('dashboard') }}">Overview</a>
       <a class="{% if active_page == 'orders' %}active{% endif %}" href="{{ url_for('orders_page') }}">Orders</a>
       <a class="{% if active_page == 'bookings' %}active{% endif %}" href="{{ url_for('booking_page') }}">Bookings</a>
       <a class="{% if active_page == 'measurements' %}active{% endif %}" href="{{ url_for('measurement_request') }}">Measurements</a>
+      <a class="{% if active_page == 'payments' %}active{% endif %}" href="{{ url_for('customer_payments') }}">Payments</a>
     </nav>
     <a class="admin-sidebar-action" href="{{ url_for('profile') }}">My profile</a>
+    <a class="admin-sidebar-action" href="{{ url_for('logout') }}">Logout</a>
   </aside>
   <main class="admin-page-content">
     {% if active_page != 'overview' %}

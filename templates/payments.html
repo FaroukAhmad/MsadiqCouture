@@ -1,0 +1,45 @@
+{% extends 'customer_layout.html' %}
+{% set active_page = 'payments' %}
+{% block title %}Payments | Msadiq Couture{% endblock %}
+{% block customer_content %}
+<section class="admin-page-heading">
+  <p class="eyebrow">Billing</p>
+  <h1>Your payments</h1>
+  <p>Track pending balances and review your past payments.</p>
+</section>
+
+<section class="admin-page-grid">
+  <div class="panel">
+    <h3>Pending payments</h3>
+    <ul class="activity-list dashboard-list">
+      {% for payment in pending_payments %}
+        <li>
+          <strong>{{ payment.order_number }}</strong>
+          <span>{{ orders_by_number[payment.order_number].item_name if payment.order_number in orders_by_number else '' }} &bull; {{ payment.currency }} {{ "{:,.0f}".format(payment.amount) }}</span>
+          <small>{{ payment.status }} &bull; {{ payment.gateway }}</small>
+          <form method="post" action="{{ url_for('initialize_payment', order_number=payment.order_number) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button class="btn btn-secondary btn-small" type="submit">Pay securely</button>
+          </form>
+        </li>
+      {% else %}
+        <li><span>No pending payments.</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h3>Payment history</h3>
+    <ul class="activity-list dashboard-list">
+      {% for payment in payment_history %}
+        <li>
+          <strong>{{ payment.order_number }}</strong>
+          <span>{{ orders_by_number[payment.order_number].item_name if payment.order_number in orders_by_number else '' }} &bull; {{ payment.currency }} {{ "{:,.0f}".format(payment.amount) }}</span>
+          <small>{{ payment.status }} &bull; {{ payment.created_at.strftime('%d %b %Y') }}</small>
+        </li>
+      {% else %}
+        <li><span>No completed payments yet.</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

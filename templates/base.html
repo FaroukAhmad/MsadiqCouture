@@ -23,16 +23,18 @@
           <a href="{{ url_for('index') }}">Home</a>
           <a href="{{ url_for('styles_page') }}">Styles</a>
           <a href="{{ url_for('services_page') }}">Services</a>
-          <a href="{{ url_for('booking_page') }}">Booking</a>
-          <a href="{{ url_for('orders_page') }}">Orders</a>
           <a href="{{ url_for('about') }}">About</a>
           <a href="{{ url_for('contact') }}">Contact</a>
         </nav>
         {% endif %}
         <div class="nav-actions">
           {% if session.get('user_id') %}
-            <a class="btn btn-secondary" href="{{ url_for('profile') }}">Profile</a>
-            <a class="btn btn-secondary" href="{{ url_for('logout') }}">Logout</a>
+            {% if session.get('role') == 'admin' %}
+              <a class="btn btn-secondary" href="{{ url_for('profile') }}">Profile</a>
+              <a class="btn btn-secondary" href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+              <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% endif %}
           {% else %}
             <a class="btn btn-secondary" href="{{ url_for('login') }}">Login</a>
           {% endif %}
@@ -119,7 +121,6 @@
       </div>
       <div class="container footer-bottom">
         <span>© 2026 Msadiq Couture</span>
-        <span>Luxury tailoring • Premium craftsmanship</span>
       </div>
     </footer>
 
