@@ -13,7 +13,15 @@
     <h3>Submit measurements</h3>
     <form class="contact-form admin-form" method="post" action="{{ url_for('measurement_request') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>Garment or order<input type="text" name="garment_name" placeholder="Royal Kaftan Set" required /></label>
+      <label>
+        Service
+        <select name="garment_name" required>
+          <option value="" disabled selected>Select a service</option>
+          <option value="Bespoke tailoring">Bespoke tailoring</option>
+          <option value="Ready to wears">Ready to wears</option>
+          <option value="Bridal Wears">Bridal Wears</option>
+        </select>
+      </label>
       <label>Chest<input type="text" name="chest" placeholder="38 in" required /></label>
       <label>Waist<input type="text" name="waist" placeholder="32 in" required /></label>
       <label>Hip<input type="text" name="hip" placeholder="40 in" required /></label>

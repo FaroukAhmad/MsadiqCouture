@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from app import app, db, MeasurementRequest
+from app import app, db, ContactMessage, MeasurementRequest, Service, Style
 
 
 @pytest.fixture()
@@ -40,13 +40,95 @@ def test_invalid_csrf_is_rejected(client):
     assert response.status_code == 400
 
 
+def test_contact_messages_are_saved_and_admin_can_view_them(client):
+    contact_page = client.get('/contact')
+    assert contact_page.status_code == 200
+    assert b'No. 265, Giginyu - A, Sala Kaapani Road' in contact_page.data
+    token = csrf(client)
+    response = client.post('/contact', data={
+        'csrf_token': token,
+        'name': 'Test Customer',
+        'email': 'customer@example.com',
+        'message': 'I would like to discuss a bespoke outfit.',
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'Your message has been sent' in response.data
+
+    with app.app_context():
+        assert ContactMessage.query.filter_by(email='customer@example.com').count() == 1
+
+    login(client, 'admin@msadiq.com', 'admin123')
+    response = client.get('/admin/messages')
+    assert response.status_code == 200
+    assert b'I would like to discuss a bespoke outfit.' in response.data
+
+
+def test_style_promotion_is_saved_and_shown_on_cards(client):
+    login(client, 'admin@msadiq.com', 'admin123')
+    style_admin_page = client.get('/admin/styles')
+    assert b'<select name="promotion">' in style_admin_page.data
+    assert b'20%' in style_admin_page.data
+    token = csrf(client)
+    response = client.post('/admin/style/create', data={
+        'csrf_token': token,
+        'name': 'Promotion Test Style',
+        'slug': 'promotion-test-style',
+        'category_id': '1',
+        'gender': 'Women',
+        'price': '100000',
+        'promotion': '20',
+        'featured': 'on',
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    with app.app_context():
+        style = Style.query.filter_by(slug='promotion-test-style').one()
+        assert style.promotion == 20
+    response = client.get('/')
+    assert b'20% OFF' in response.data
+
+
+def test_service_admin_forms_hide_price_status_and_image_url_fields(client):
+    login(client, 'admin@msadiq.com', 'admin123')
+    response = client.get('/admin/services')
+    assert response.status_code == 200
+    assert b'name="price"' not in response.data
+    assert b'name="status"' not in response.data
+    assert b'name="image"' not in response.data
+
+
+def test_homepage_shows_at_most_four_service_cards(client):
+    with app.app_context():
+        db.session.add_all([
+            Service(
+                name=f'Homepage test service {index}',
+                description='Service used to verify the homepage card limit.',
+                price=50000,
+                duration='7-10 days',
+                status='Available',
+                image='https://example.com/service.jpg',
+            )
+            for index in range(5)
+        ])
+        db.session.commit()
+    response = client.get('/')
+    assert response.status_code == 200
+    assert response.data.count(b'class="service-card"') == 4
+    assert b'View more services' in response.data
+
+
 def test_customer_can_submit_measurement(client):
     response = login(client, 'aisha@msadiq.com', 'customer123')
     assert response.status_code == 200
+    measurement_page = client.get('/measurements')
+    assert b'<select name="garment_name" required>' in measurement_page.data
+    assert b'Bespoke tailoring' in measurement_page.data
+    assert b'Ready to wears' in measurement_page.data
+    assert b'Bridal Wears' in measurement_page.data
+    assert b'Monogram' not in measurement_page.data
     token = csrf(client)
     response = client.post('/measurements', data={
         'csrf_token': token,
-        'garment_name': 'Test Kaftan',
+        'garment_name': 'Bespoke tailoring',
         'chest': '38 in',
         'waist': '32 in',
         'hip': '40 in',
@@ -54,4 +136,4 @@ def test_customer_can_submit_measurement(client):
     }, follow_redirects=True)
     assert response.status_code == 200
     with app.app_context():
-        assert MeasurementRequest.query.filter_by(garment_name='Test Kaftan').count() == 1
+        assert MeasurementRequest.query.filter_by(garment_name='Bespoke tailoring').count() == 1

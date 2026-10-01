@@ -84,6 +84,7 @@ class Style(db.Model):
     image_gallery = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Float, default=4.8)
     reviews = db.Column(db.Integer, default=0)
+    promotion = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @property
@@ -185,6 +186,14 @@ class MeasurementRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class ContactMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(160), nullable=False)
+    email = db.Column(db.String(160), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 def seed_demo_data():
     with app.app_context():
         db.create_all()
@@ -193,6 +202,10 @@ def seed_demo_data():
             if 'admin_response' not in columns:
                 db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
                 db.session.commit()
+        style_columns = {column['name'] for column in inspect(db.engine).get_columns('style')}
+        if 'promotion' not in style_columns:
+            db.session.execute(db.text('ALTER TABLE style ADD COLUMN promotion INTEGER NOT NULL DEFAULT 0'))
+            db.session.commit()
 
         if Role.query.count() == 0:
             db.session.add_all([
@@ -356,6 +369,10 @@ with app.app_context():
         if 'admin_response' not in columns:
             db.session.execute(db.text('ALTER TABLE "order" ADD COLUMN admin_response TEXT'))
             db.session.commit()
+    style_columns = {column['name'] for column in inspect(db.engine).get_columns('style')}
+    if 'promotion' not in style_columns:
+        db.session.execute(db.text('ALTER TABLE style ADD COLUMN promotion INTEGER NOT NULL DEFAULT 0'))
+        db.session.commit()
 
 if app.config["SEED_DEMO_DATA"]:
     seed_demo_data()
@@ -498,7 +515,7 @@ def dashboard_stats():
 @app.route('/')
 def index():
     featured = Style.query.order_by(Style.created_at.desc()).limit(8).all()
-    services = Service.query.limit(3).all()
+    services = Service.query.limit(4).all()
     return render_template('index.html', styles=featured, services=services, stats=dashboard_stats())
 
 
@@ -639,6 +656,27 @@ def about():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
+
+@app.route('/contact', methods=['POST'])
+def submit_contact_message():
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    message = request.form.get('message', '').strip()
+    if not name or not email or not message:
+        flash('Please complete your name, email, and message.', 'error')
+        return redirect(url_for('contact'))
+    if len(name) > 160 or len(email) > 160 or len(message) > 5000:
+        flash('Please keep your name and email under 160 characters and your message under 5000 characters.', 'error')
+        return redirect(url_for('contact'))
+    if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email):
+        flash('Please enter a valid email address.', 'error')
+        return redirect(url_for('contact'))
+
+    db.session.add(ContactMessage(name=name, email=email, message=message))
+    db.session.commit()
+    flash('Thank you. Your message has been sent.', 'success')
+    return redirect(url_for('contact'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -952,6 +990,7 @@ def render_admin_resource(page, title, description):
         'bookings': Booking.query.order_by(Booking.created_at.desc()).all(),
         'orders': Order.query.order_by(Order.created_at.desc()).all(),
         'payments': Payment.query.order_by(Payment.created_at.desc()).all(),
+        'contact_messages': ContactMessage.query.order_by(ContactMessage.created_at.desc()).all(),
         'admin_users': User.query.join(Role).filter(Role.name.in_(['admin', 'staff'])).order_by(User.full_name).all(),
         'active_page': page,
     }
@@ -968,6 +1007,12 @@ def admin_styles():
 @admin_required
 def admin_services():
     return render_admin_resource('services', 'Services', 'Manage tailoring services and availability.')
+
+
+@app.route('/admin/messages')
+@admin_required
+def admin_contact_messages():
+    return render_admin_resource('contact_messages', 'Contact messages', 'Review messages submitted by customers.')
 
 
 @app.route('/admin/booking')
@@ -1009,6 +1054,10 @@ def admin_create_style():
     fabrics = request.form.get('fabrics', '').strip()
     lead_time = request.form.get('lead_time', '10-14 days').strip()
     availability = request.form.get('availability', 'Made to order').strip()
+    promotion = request.form.get('promotion', type=int) or 0
+    if promotion not in (0, 5, 10, 15, 20, 25, 30, 40, 50):
+        flash('Choose a valid promotion percentage.', 'error')
+        return redirect(url_for('admin_styles'))
     image_main = request.form.get('image_main', '').strip() or 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80'
     image_upload = request.files.get('image_file')
     if image_upload and image_upload.filename:
@@ -1038,7 +1087,8 @@ def admin_create_style():
         image_main=image_main,
         image_gallery=image_gallery,
         rating=4.8,
-        reviews=0
+        reviews=0,
+        promotion=promotion
     )
     db.session.add(style)
     db.session.commit()
@@ -1160,6 +1210,12 @@ def admin_delete_style(style_id):
 def admin_edit_style(style_id):
     style = Style.query.get_or_404(style_id)
     style.name = request.form.get('name', style.name).strip() or style.name
+    if 'promotion' in request.form:
+        promotion = request.form.get('promotion', type=int)
+        if promotion not in (0, 5, 10, 15, 20, 25, 30, 40, 50):
+            flash('Choose a valid promotion percentage.', 'error')
+            return redirect(url_for('admin_styles'))
+        style.promotion = promotion
     if 'slug' in request.form:
         # Only touch the slug if the form actually sent one (the inline
         # edit form doesn't); an empty value falls back to the name.

@@ -47,7 +47,10 @@
     <div class="card-grid">
       {% for style in styles %}
         <article class="style-card">
-          <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+          <div class="style-image-wrap">
+            <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+            {% if style.promotion %}<span class="promotion-badge">{{ style.promotion }}% OFF</span>{% endif %}
+          </div>
           <div class="style-body">
             <span class="badge">{{ style.category }}</span>
             <h3>{{ style.name }}</h3>
@@ -67,30 +70,22 @@
 </section>
 
 <section class="section alt-bg business-section">
-  <div class="container two-column">
-    <div>
+  <div class="container">
+    <div class="section-heading">
       <p class="eyebrow">Why choose us</p>
-      <h2>Modern elegance, true craftsmanship.</h2>
-      <ul class="checks">
-        <li>Consultation-led bespoke tailoring approach</li>
-        <li>Measured fit for weddings, bridal, corporate, and traditional wear</li>
-        <li>Secure booking, payment, and order tracking workflows</li>
-        <li>Expert finishing and customer support throughout production</li>
-      </ul>
     </div>
-    <div class="stats-panel">
-      <div class="stat-box">
-        <strong>{{ stats.customers }}</strong>
-        <span>Happy customers</span>
-      </div>
-      <div class="stat-box">
-        <strong>{{ stats.completed_orders }}</strong>
-        <span>Completed orders</span>
-      </div>
-      <div class="stat-box">
-        <strong>{{ stats.revenue }}</strong>
-        <span>Revenue tracked</span>
-      </div>
+    <div class="mission-vision-grid">
+      <article class="mission-vision-card">
+        <h3>Our Mission</h3>
+        <p>To create exceptional fashion through creativity, craftsmanship, quality, and innovation, while turning our clients’ ideas and visions into well-designed, beautifully finished outfits.</p>
+        <p>We are committed to providing excellent craftsmanship, thoughtful design, and a memorable client experience while continuously evolving with the fashion industry.</p>
+        <p>Through our work and our upcoming Fashion Academy, we aim to create, inspire, educate, and contribute meaningfully to the growth of the fashion industry.</p>
+      </article>
+      <article class="mission-vision-card">
+        <h3>Our Vision</h3>
+        <p>To build M.Sadiq Couture Fashion into a globally recognized Nigerian fashion brand, known for distinctive design, exceptional craftsmanship, quality, innovation, and excellence.</p>
+        <p>We envision a brand that takes Nigerian creativity and craftsmanship from Kano to the world, while creating opportunities, nurturing talent, and contributing to the development of a thriving fashion industry.</p>
+      </article>
     </div>
   </div>
 </section>
@@ -109,12 +104,14 @@
             <h3>{{ service.name }}</h3>
             <p>{{ service.description }}</p>
             <div class="service-meta">
-              <span>From ₦{{ "{:,.0f}".format(service.price) }}</span>
               <span>{{ service.duration }}</span>
             </div>
           </div>
         </article>
       {% endfor %}
+    </div>
+    <div class="section-footer-action">
+      <a href="{{ url_for('services_page') }}" class="btn btn-secondary">View more services</a>
     </div>
   </div>
 </section>

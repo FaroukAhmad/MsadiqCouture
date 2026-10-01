@@ -12,22 +12,34 @@
   <div class="container contact-layout">
     <div class="contact-card">
       <h3>Visit or connect</h3>
-      <p>34 Victoria Island, Lagos, Nigeria</p>
-      <p>hello@msadiqcouture.com</p>
-      <p>+234 800 123 4567</p>
+      <address class="contact-address">
+        <strong>M.Sadiq Fashion House</strong>
+        <span>No. 265, Giginyu - A, Sala Kaapani Road</span>
+        <span>Opp. Muhammadu Buhari Specialist Hospital</span>
+        <span>Nassarawa LGA, Kano State, Nigeria</span>
+      </address>
+      <h4>Connect with us</h4>
+      <ul class="contact-social-links">
+        <li><a href="https://instagram.com/m.sadiq_couture_fashion" target="_blank" rel="noopener noreferrer">Instagram: @m.sadiq_couture_fashion</a></li>
+        <li><a href="https://tiktok.com/@m.sadiq_couture_fashion" target="_blank" rel="noopener noreferrer">TikTok: @m.sadiq_couture_fashion</a></li>
+        <li><a href="https://facebook.com/m.sadiq_couture_fashion" target="_blank" rel="noopener noreferrer">Facebook: M.Sadiq Fashion House</a></li>
+        <li><a href="https://wa.me/2348142481365" target="_blank" rel="noopener noreferrer">WhatsApp: 08142481365</a></li>
+        <li><a href="tel:+2347037788616">Call: 07037788616</a></li>
+      </ul>
     </div>
-    <form class="contact-form" data-contact-form>
+    <form class="contact-form" method="post" action="{{ url_for('submit_contact_message') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <label>
         Full name
-        <input type="text" placeholder="Your full name" />
+        <input type="text" name="name" autocomplete="name" maxlength="160" placeholder="Your full name" required />
       </label>
       <label>
         Email
-        <input type="email" placeholder="name@example.com" />
+        <input type="email" name="email" autocomplete="email" maxlength="160" placeholder="name@example.com" required />
       </label>
       <label>
         Message
-        <textarea rows="5" placeholder="Tell us what you need"></textarea>
+        <textarea name="message" rows="5" maxlength="5000" placeholder="Tell us what you need" required></textarea>
       </label>
       <button type="submit" class="btn btn-primary">Send message</button>
     </form>

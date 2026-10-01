@@ -289,6 +289,42 @@ h3 { font-size: 2rem; }
   border-radius: 24px 24px 0 0;
 }
 
+.style-image-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+}
+
+.promotion-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: var(--gold-600);
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(18,18,18,0.2);
+}
+
+.mission-vision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.mission-vision-card {
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border: 1px solid rgba(184,134,36,0.2);
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+
+.mission-vision-card h3 { color: var(--gold-600); }
+.mission-vision-card p:last-child { margin-bottom: 0; }
+
 .style-body, .service-body {
   padding: 1.2rem 1.2rem 1.5rem;
 }
@@ -448,12 +484,37 @@ h3 { font-size: 2rem; }
   margin-bottom: 22px;
 }
 
-.search-bar input, .contact-form input, .contact-form textarea, .auth-form input, select {
+.search-bar input, .contact-form input:not([type="checkbox"]):not([type="file"]),
+.contact-form textarea, .contact-form select,
+.auth-form input:not([type="checkbox"]):not([type="file"]), .auth-form select,
+.profile-form input:not([type="checkbox"]):not([type="file"]), .profile-form select,
+.admin-form input:not([type="checkbox"]):not([type="file"]), .admin-form select,
+.admin-form textarea, select {
   width: 100%;
+  min-width: 0;
+  min-height: 48px;
   border: 2px solid rgba(184,134,36,0.35);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 0.9rem 1rem;
   background: var(--white);
+}
+
+.contact-form textarea, .admin-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.contact-form input[type="file"], .admin-form input[type="file"], .profile-form input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+}
+
+.contact-form input[type="checkbox"], .admin-form input[type="checkbox"], .profile-form input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+  margin: 0 0.5rem 0 0;
+  padding: 0;
+  accent-color: var(--gold-600);
 }
 
 select {
@@ -463,7 +524,10 @@ select {
   appearance: auto;
 }
 
-select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form textarea:focus, .auth-form input:focus {
+select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form textarea:focus,
+.contact-form select:focus, .auth-form input:focus, .auth-form select:focus,
+.admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus,
+.profile-form input:focus, .profile-form select:focus {
   outline: none;
   border-color: var(--gold-600);
   box-shadow: 0 0 0 4px rgba(212,167,61,0.16);
@@ -532,6 +596,24 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 
 .contact-card, .panel, .feature-box, .auth-card { padding: 1.5rem; }
 
+.contact-address {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 24px;
+  font-style: normal;
+}
+
+.contact-social-links {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-social-links a { color: var(--gold-600); overflow-wrap: anywhere; }
+.contact-message-body { min-width: 240px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 .booking-layout {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -578,6 +660,7 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   display: grid;
   gap: 16px;
   width: 100%;
+  min-width: 0;
 }
 
 .contact-form[hidden], .auth-form[hidden] {
@@ -586,11 +669,22 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 
 .contact-form label, .auth-form label, .admin-form label, .profile-form label {
   display: grid;
+  min-width: 0;
   gap: 8px;
   color: var(--neutral-700);
   font-weight: 600;
   width: 100%;
 }
+
+.contact-form > .btn, .auth-form > .btn, .admin-form > .btn,
+.booking-form > .btn, .profile-form > .btn {
+  position: static;
+  justify-self: start;
+  max-width: 100%;
+  margin-top: 4px;
+}
+
+.auth-form > .btn.full-width { justify-self: stretch; }
 
 .admin-action-row, .profile-form-actions, .admin-edit-actions {
   display: flex;
@@ -599,6 +693,10 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   gap: 12px;
   margin-top: 8px;
   width: 100%;
+}
+
+.profile-form-actions > .btn, .admin-action-row > .btn, .admin-edit-actions > .btn {
+  max-width: 100%;
 }
 
 .admin-form-row {
@@ -689,6 +787,14 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 .auth-form-shell {
   width: min(520px, 100%);
   margin: 0 auto;
+}
+
+.auth-form {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgba(184,134,36,0.2);
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
 }
 
 /* Profile page: single centered column (unlike the two-column .auth-card
@@ -1155,7 +1261,7 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
   gap: 28px;
 }
 
@@ -1180,7 +1286,7 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
 }
 
 @media (max-width: 980px) {
-  .hero-grid, .two-column, .product-layout, .contact-layout, .auth-card, .admin-layout, .catalog-layout, .footer-grid, .admin-workspace {
+  .hero-grid, .two-column, .product-layout, .contact-layout, .auth-card, .admin-layout, .catalog-layout, .footer-grid, .admin-workspace, .mission-vision-grid {
     grid-template-columns: 1fr;
   }
 

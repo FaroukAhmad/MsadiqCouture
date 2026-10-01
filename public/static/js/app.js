@@ -9,21 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const form = document.querySelector('[data-contact-form]');
-  if (form) {
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const button = form.querySelector('button');
-      button.disabled = true;
-      button.textContent = 'Message sent';
-      setTimeout(() => {
-        button.disabled = false;
-        button.textContent = 'Send message';
-        form.reset();
-      }, 1300);
-    });
-  }
-
   // Toast confirmations (login, logout, profile/style/service updates, etc.):
   // shown for 3 seconds, then fade out and remove themselves.
   document.querySelectorAll('.toast-wrap .toast').forEach((toast) => {

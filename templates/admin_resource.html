@@ -7,7 +7,32 @@
   <p>{{ description }}</p>
 </section>
 
-{% if page == 'styles' %}
+{% if page == 'contact_messages' %}
+<section class="panel">
+  {% if contact_messages %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date</th><th>Customer</th><th>Email</th><th>Message</th></tr>
+        </thead>
+        <tbody>
+          {% for message in contact_messages %}
+            <tr>
+              <td>{{ message.created_at.strftime('%Y-%m-%d %H:%M') if message.created_at else '' }}</td>
+              <td>{{ message.name }}</td>
+              <td><a href="mailto:{{ message.email }}">{{ message.email }}</a></td>
+              <td class="contact-message-body">{{ message.message }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty-state">No customer messages have been received.</p>
+  {% endif %}
+</section>
+
+{% elif page == 'styles' %}
 <section class="admin-page-grid">
   <div class="panel">
     <h3>Add style</h3>
@@ -30,6 +55,13 @@
         </select>
       </label>
       <label>Price<input type="number" name="price" value="150000" required /></label>
+      <label>Promotion
+        <select name="promotion">
+          {% for percentage in [0, 5, 10, 15, 20, 25, 30, 40, 50] %}
+            <option value="{{ percentage }}">{{ 'No promotion' if percentage == 0 else percentage ~ '%' }}</option>
+          {% endfor %}
+        </select>
+      </label>
       <label>Lead time<input name="lead_time" value="10-14 days" /></label>
       <label>Availability<input name="availability" value="Made to order" /></label>
       <label>Colors<input name="colors" value="Gold|Ivory" /></label>
@@ -54,7 +86,7 @@
               <img class="admin-edit-thumb" src="{{ style.image_main }}" alt="" />
               <span>
                 <strong>{{ style.name }}</strong>
-                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} &bull; {{ style.category }}</span>
+                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} &bull; {{ style.category }}{% if style.promotion %} &bull; {{ style.promotion }}% promotion{% endif %}</span>
               </span>
             </summary>
             <form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_style', style_id=style.id) }}" enctype="multipart/form-data">
@@ -77,6 +109,13 @@
                 </select>
               </label>
               <label>Price<input type="number" name="price" value="{{ style.price }}" /></label>
+              <label>Promotion
+                <select name="promotion">
+                  {% for percentage in [0, 5, 10, 15, 20, 25, 30, 40, 50] %}
+                    <option value="{{ percentage }}" {% if style.promotion == percentage %}selected{% endif %}>{{ 'No promotion' if percentage == 0 else percentage ~ '%' }}</option>
+                  {% endfor %}
+                </select>
+              </label>
               <label>Lead time<input name="lead_time" value="{{ style.lead_time }}" /></label>
               <label>Availability<input name="availability" value="{{ style.availability }}" /></label>
               <label>Colors<input name="colors" value="{{ style.colors }}" /></label>
@@ -105,16 +144,7 @@
     <form class="contact-form admin-form" method="post" action="{{ url_for('admin_create_service') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <label>Service name<input name="name" required /></label>
-      <label>Price<input type="number" name="price" value="50000" required /></label>
       <label>Duration<input name="duration" value="7-10 days" /></label>
-      <label>Status
-        <select name="status">
-          <option>Available</option>
-          <option>Popular</option>
-          <option>Limited</option>
-        </select>
-      </label>
-      <label>Image URL<input type="url" name="image" /></label>
       <label>Upload image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
       <label>Description<textarea name="description" rows="4"></textarea></label>
       <div class="admin-action-row">
@@ -139,16 +169,7 @@
             <form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_service', service_id=service.id) }}" enctype="multipart/form-data">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               <label>Service name<input name="name" value="{{ service.name }}" required /></label>
-              <label>Price<input type="number" name="price" value="{{ service.price }}" /></label>
               <label>Duration<input name="duration" value="{{ service.duration }}" /></label>
-              <label>Status
-                <select name="status">
-                  {% for s in ['Available', 'Popular', 'Limited'] %}
-                    <option {% if s == service.status %}selected{% endif %}>{{ s }}</option>
-                  {% endfor %}
-                </select>
-              </label>
-              <label>Image URL<input type="url" name="image" value="{{ service.image }}" /></label>
               <label>Upload new image<input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" /></label>
               <label>Description<textarea name="description" rows="3">{{ service.description }}</textarea></label>
               <div class="admin-edit-actions">

@@ -50,7 +50,10 @@
     <div class="card-grid">
       {% for related in related_styles %}
         <article class="style-card">
-          <img src="{{ related.images[0] }}" alt="{{ related.name }}">
+          <div class="style-image-wrap">
+            <img src="{{ related.images[0] }}" alt="{{ related.name }}">
+            {% if related.promotion %}<span class="promotion-badge">{{ related.promotion }}% OFF</span>{% endif %}
+          </div>
           <div class="style-body">
             <h3>{{ related.name }}</h3>
             <div class="meta-row">

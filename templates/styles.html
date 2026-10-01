@@ -29,7 +29,10 @@
       <div class="card-grid catalog-grid">
         {% for style in styles %}
           <article class="style-card">
-            <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+            <div class="style-image-wrap">
+              <img src="{{ style.images[0] }}" alt="{{ style.name }}" />
+              {% if style.promotion %}<span class="promotion-badge">{{ style.promotion }}% OFF</span>{% endif %}
+            </div>
             <div class="style-body">
               <span class="badge">{{ style.category }}</span>
               <h3>{{ style.name }}</h3>

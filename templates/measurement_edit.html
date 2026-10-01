@@ -13,7 +13,17 @@
     <h3>{{ measurement.garment_name }}</h3>
     <form class="contact-form admin-form" method="post" action="{{ url_for('edit_measurement', measurement_id=measurement.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>Garment or order<input type="text" name="garment_name" value="{{ measurement.garment_name }}" required /></label>
+      <label>
+        Service
+        <select name="garment_name" required>
+          {% if measurement.garment_name not in ['Bespoke tailoring', 'Ready to wears', 'Bridal Wears'] %}
+            <option value="{{ measurement.garment_name }}" selected>{{ measurement.garment_name }}</option>
+          {% endif %}
+          <option value="Bespoke tailoring" {% if measurement.garment_name == 'Bespoke tailoring' %}selected{% endif %}>Bespoke tailoring</option>
+          <option value="Ready to wears" {% if measurement.garment_name == 'Ready to wears' %}selected{% endif %}>Ready to wears</option>
+          <option value="Bridal Wears" {% if measurement.garment_name == 'Bridal Wears' %}selected{% endif %}>Bridal Wears</option>
+        </select>
+      </label>
       <label>Chest<input type="text" name="chest" value="{{ measurement.chest }}" required /></label>
       <label>Waist<input type="text" name="waist" value="{{ measurement.waist }}" required /></label>
       <label>Hip<input type="text" name="hip" value="{{ measurement.hip }}" required /></label>
