@@ -35,6 +35,21 @@ def test_public_homepage_and_protected_dashboard(client):
     assert client.get('/dashboard').status_code == 302
 
 
+def test_served_stylesheet_has_responsive_public_and_account_layouts(client):
+    response = client.get('/static/css/styles.css')
+    assert response.status_code == 200
+    css = response.data
+    for rule in (
+        b'@media (max-width: 1024px)',
+        b'@media (max-width: 720px)',
+        b'@media (max-width: 480px)',
+        b'.admin-sidebar-nav a { flex: 0 0 auto; white-space: nowrap; }',
+        b'.table-wrap { max-width: 100%; overflow-x: auto; }',
+        b'.footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr));',
+    ):
+        assert rule in css
+
+
 def test_invalid_csrf_is_rejected(client):
     response = client.post('/login', data={'email': 'admin@msadiq.com', 'password': 'admin123'})
     assert response.status_code == 400
