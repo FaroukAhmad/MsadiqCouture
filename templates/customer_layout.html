@@ -21,9 +21,6 @@
     <a class="admin-sidebar-action" href="{{ url_for('logout') }}">Logout</a>
   </aside>
   <main class="admin-page-content">
-    {% if active_page != 'overview' %}
-      <a class="dashboard-back admin-back" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard"><span class="dashboard-back-icon" aria-hidden="true">&larr;</span><span>Back to dashboard</span></a>
-    {% endif %}
     {% block customer_content %}{% endblock %}
   </main>
 </div>

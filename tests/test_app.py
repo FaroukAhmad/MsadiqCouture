@@ -96,6 +96,22 @@ def test_service_admin_forms_hide_price_status_and_image_url_fields(client):
     assert b'name="image"' not in response.data
 
 
+def test_admin_and_customer_pages_have_centered_headings_and_no_back_arrows(client):
+    login(client, 'admin@msadiq.com', 'admin123')
+    admin_page = client.get('/admin/services')
+    assert b'>Dashboard</a>' in admin_page.data
+    assert b'>Analytics</a>' not in admin_page.data
+    assert b'Back to dashboard' not in admin_page.data
+    assert b'class="admin-page-heading"' in admin_page.data
+    stylesheet = client.get('/static/css/styles.css')
+    assert b'.admin-page-heading { max-width: 760px; margin: 0 auto 32px; text-align: center; }' in stylesheet.data
+    client.get('/logout', follow_redirects=True)
+    login(client, 'aisha@msadiq.com', 'customer123')
+    customer_page = client.get('/orders')
+    assert b'Back to dashboard' not in customer_page.data
+    assert b'Track your tailoring journey' in customer_page.data
+
+
 def test_homepage_shows_at_most_four_service_cards(client):
     with app.app_context():
         db.session.add_all([

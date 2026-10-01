@@ -86,7 +86,7 @@
               <img class="admin-edit-thumb" src="{{ style.image_main }}" alt="" />
               <span>
                 <strong>{{ style.name }}</strong>
-                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} &bull; {{ style.category }}{% if style.promotion %} &bull; {{ style.promotion }}% promotion{% endif %}</span>
+                <span class="admin-edit-meta">₦{{ "{:,.0f}".format(style.price) }} &bull; {{ style.category }}{% if style.promotion %} &bull; {{ style.promotion }}% Off{% endif %}</span>
               </span>
             </summary>
             <form class="contact-form admin-form" method="post" action="{{ url_for('admin_edit_style', style_id=style.id) }}" enctype="multipart/form-data">
