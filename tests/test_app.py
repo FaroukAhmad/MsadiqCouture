@@ -113,7 +113,9 @@ def test_homepage_shows_at_most_four_service_cards(client):
     response = client.get('/')
     assert response.status_code == 200
     assert response.data.count(b'class="service-card"') == 4
+    assert b'images/Hero.jpg' in response.data
     assert b'View more services' in response.data
+    assert b'href="/contact">Contact</a>' in response.data
 
 
 def test_customer_can_submit_measurement(client):

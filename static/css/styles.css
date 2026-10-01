@@ -410,6 +410,10 @@ h3 { font-size: 2rem; }
   grid-template-columns: repeat(3, minmax(0,1fr));
 }
 
+.home-service-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .wide-card { overflow: hidden; }
 
 .steps-grid {
@@ -1303,7 +1307,7 @@ select:focus, .search-bar input:focus, .contact-form input:focus, .contact-form 
   .toolbar-search { grid-column: 1 / -1; }
   .analytics-grid { grid-template-columns: 1fr; }
   .card-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .service-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .service-grid, .home-service-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .steps-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .quote-grid { grid-template-columns: 1fr; }
 }
